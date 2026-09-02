@@ -4,21 +4,97 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
+:root {
+  --background: 222 60% 5%;
+  --foreground: 210 40% 98%;
+
+  --card: 222 55% 8%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222 55% 8%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 210 100% 55%;
+  --primary-foreground: 222 47% 6%;
+
+  --secondary: 220 90% 45%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 220 40% 15%;
+  --muted-foreground: 215 25% 70%;
+
+  --accent: 200 100% 55%;
+  --accent-foreground: 222 47% 6%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success: 142 76% 45%;
+  --success-foreground: 210 40% 98%;
+
+  --warning: 38 92% 55%;
+  --warning-foreground: 222 47% 6%;
+
+  --border: 220 40% 18%;
+  --input: 220 40% 15%;
+  --ring: 210 100% 55%;
+
+  --radius: 0.9rem;
+
+  --cyan-glow: 195 100% 55%;
+  --purple-glow: 270 90% 65%;
+  --slate-dark: 222 60% 3%;
+  --slate-medium: 222 47% 11%;
+
+  --blue-1: 220 100% 65%;
+  --blue-2: 210 100% 55%;
+  --blue-3: 200 100% 50%;
+  --blue-4: 190 100% 55%;
+
+  --vip-1: 280 90% 65%;
+  --vip-2: 265 95% 60%;
+  --vip-3: 295 85% 55%;
+  --vip-4: 250 100% 70%;
+
+  --chart-1: 220 100% 65%;
+  --chart-2: 200 100% 50%;
+  --chart-3: 280 90% 65%;
+  --chart-4: 142 76% 45%;
+  --chart-5: 38 92% 55%;
+
+  --gradient-primary: linear-gradient(135deg, hsl(220 100% 60%), hsl(195 100% 55%));
+  --gradient-secondary: linear-gradient(135deg, hsl(210 100% 50%), hsl(190 100% 60%));
+  --gradient-vip: linear-gradient(135deg, hsl(280 90% 60%) 0%, hsl(265 95% 55%) 35%, hsl(295 90% 60%) 70%, hsl(250 100% 70%) 100%);
+  --gradient-dark: linear-gradient(180deg, hsl(222 60% 6%), hsl(222 60% 3%));
+  --gradient-glow: radial-gradient(ellipse at center, hsl(210 100% 55% / 0.25), transparent 70%);
+  --gradient-aurora: linear-gradient(120deg, hsl(220 100% 55%) 0%, hsl(200 100% 50%) 35%, hsl(190 100% 60%) 70%, hsl(220 100% 65%) 100%);
+  --gradient-shimmer: linear-gradient(110deg, transparent 30%, hsl(200 100% 70% / 0.35) 50%, transparent 70%);
+
+  --shadow-glow-cyan: 0 0 40px hsl(200 100% 55% / 0.45);
+  --shadow-glow-purple: 0 0 45px hsl(275 95% 65% / 0.55);
+  --shadow-glow-vip: 0 0 60px hsl(280 95% 60% / 0.55), 0 0 120px hsl(265 100% 55% / 0.35);
+  --shadow-card: 0 25px 50px -12px hsl(222 60% 2% / 0.6), 0 0 0 1px hsl(210 100% 55% / 0.08);
+
+  --sidebar-background: 222 60% 5%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 210 100% 55%;
+  --sidebar-primary-foreground: 222 47% 6%;
+  --sidebar-accent: 220 40% 15%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 220 40% 18%;
+  --sidebar-ring: 210 100% 55%;
+}
+
+.dark {
+  --background: 222 60% 5%;
+  --foreground: 210 40% 98%;
+}
 
 @theme inline {
+  --font-sans: 'Rubik', sans-serif;
+  --font-display: 'Space Mono', monospace;
+  --font-mono: 'Space Mono', monospace;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -26,119 +102,490 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-ring-offset-background: hsl(var(--background));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --color-cyan-glow: hsl(var(--cyan-glow));
+  --color-purple-glow: hsl(var(--purple-glow));
+  --color-blue-1: hsl(var(--blue-1));
+  --color-blue-2: hsl(var(--blue-2));
+  --color-blue-3: hsl(var(--blue-3));
+  --color-blue-4: hsl(var(--blue-4));
+  --color-vip-1: hsl(var(--vip-1));
+  --color-vip-2: hsl(var(--vip-2));
+  --color-vip-3: hsl(var(--vip-3));
+  --color-vip-4: hsl(var(--vip-4));
+  --color-slate-dark: hsl(var(--slate-dark));
+  --color-slate-medium: hsl(var(--slate-medium));
+
+  --animate-fade-in: fade-in 0.4s ease-out;
+  --animate-scale-in: scale-in 0.3s ease-out;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
-
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+@keyframes scale-in {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
 }
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: hsl(var(--border));
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Rubik', sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Mono', monospace;
+    letter-spacing: -0.01em;
+  }
+
+  button, a {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-position 0.4s ease, color 0.25s ease;
+  }
+  button:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+  button:not(:disabled):active {
+    transform: translateY(0) scale(0.98);
+  }
+  input, textarea, select {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+  }
+  input:focus, textarea:focus, select:focus {
+    box-shadow: 0 0 0 3px hsl(210 100% 55% / 0.25), 0 0 20px hsl(200 100% 55% / 0.25);
+  }
+}
+
+@layer components {
+  .glass-card {
+    background-color: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(40px);
+    border: 1px solid hsl(var(--primary) / 0.1);
+    box-shadow: var(--shadow-card);
+    position: relative;
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(210 100% 55% / 0.35), transparent 40%, hsl(190 100% 60% / 0.25));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glow-cyan { box-shadow: var(--shadow-glow-cyan); }
+  .glow-purple { box-shadow: var(--shadow-glow-purple); }
+
+  .gradient-text {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: var(--gradient-aurora);
+    background-size: 200% 200%;
+    animation: gradient 6s ease infinite;
+  }
+
+  .gradient-text-purple {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: var(--gradient-secondary);
+  }
+
+  .btn-primary {
+    position: relative;
+    overflow: hidden;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    background: var(--gradient-primary);
+    background-size: 200% 200%;
+    animation: gradient 4s ease infinite;
+  }
+  .btn-primary::before,
+  .btn-secondary::before,
+  .btn-vip::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 4.5s linear infinite;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .btn-primary:hover {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-glow-cyan);
+  }
+
+  .btn-secondary {
+    position: relative;
+    overflow: hidden;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    background: var(--gradient-secondary);
+    background-size: 200% 200%;
+    animation: gradient 5s ease infinite;
+  }
+  .btn-secondary:hover {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-glow-purple);
+  }
+
+  .btn-vip {
+    position: relative;
+    overflow: hidden;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    transition: all 0.3s;
+    background: var(--gradient-vip);
+    background-size: 250% 250%;
+    animation: gradient 4s ease infinite;
+  }
+  .btn-vip:hover {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-glow-vip);
+  }
+
+  .vip-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(140deg, hsl(280 60% 10% / 0.85), hsl(265 55% 8% / 0.85));
+    border: 1px solid hsl(280 90% 65% / 0.35);
+    box-shadow: var(--shadow-glow-vip);
+    transform: translateZ(0);
+  }
+  .vip-card::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    padding: 2px;
+    background: var(--gradient-vip);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    will-change: background-position;
+    backface-visibility: hidden;
+  }
+  .vip-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 10%, hsl(280 100% 65% / 0.25), transparent 55%),
+                radial-gradient(circle at 90% 90%, hsl(250 100% 70% / 0.22), transparent 55%);
+    pointer-events: none;
+  }
+  .text-vip {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: var(--gradient-vip);
+    background-size: 200% 200%;
+    animation: gradient 12s linear infinite;
+    will-change: background-position;
+  }
+
+  /* ================= Role theming (NORMAL / VIP / LIFETIME) ================= */
+  .role-normal {
+    --r1: 150 90% 55%;
+    --r2: 165 95% 50%;
+    --r3: 100 85% 60%;
+  }
+  .role-vip {
+    --r1: 280 90% 65%;
+    --r2: 265 95% 62%;
+    --r3: 300 90% 65%;
+  }
+  .role-lifetime {
+    --r1: 190 100% 60%;
+    --r2: 200 100% 58%;
+    --r3: 175 95% 60%;
+  }
+
+  .role-card {
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(40px);
+    background:
+      linear-gradient(140deg, hsl(var(--r1) / 0.14), transparent 45%, hsl(var(--r3) / 0.12)),
+      hsl(var(--card) / 0.7);
+    border: 1px solid hsl(var(--r1) / 0.35);
+    box-shadow: 0 0 45px hsl(var(--r1) / 0.28), 0 0 100px hsl(var(--r2) / 0.16),
+      0 25px 50px -12px hsl(222 60% 2% / 0.6);
+    transition: box-shadow 0.35s ease, transform 0.35s ease;
+    transform: translateZ(0);
+  }
+  .role-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: linear-gradient(120deg, hsl(var(--r1)), hsl(var(--r2)), hsl(var(--r3)), hsl(var(--r1)));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    backface-visibility: hidden;
+  }
+  .role-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 15% 10%, hsl(var(--r1) / 0.3), transparent 55%),
+      radial-gradient(circle at 90% 90%, hsl(var(--r3) / 0.26), transparent 55%);
+    pointer-events: none;
+  }
+  .role-card > * { position: relative; z-index: 1; }
+  .role-card:hover {
+    box-shadow: 0 0 70px hsl(var(--r1) / 0.45), 0 0 150px hsl(var(--r2) / 0.28);
+  }
+
+  .role-text {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(100deg, hsl(var(--r1)), hsl(var(--r2)), hsl(var(--r3)), hsl(var(--r1)));
+    background-size: 250% 250%;
+    animation: gradient 12s linear infinite;
+    will-change: background-position;
+  }
+
+  .role-badge {
+    color: hsl(var(--r1));
+    background: hsl(var(--r1) / 0.14);
+    border: 1px solid hsl(var(--r1) / 0.45);
+    box-shadow: 0 0 18px hsl(var(--r1) / 0.25) inset;
+  }
+
+  .role-btn {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    transition: all 0.3s;
+    background: linear-gradient(120deg, hsl(var(--r1)), hsl(var(--r2)), hsl(var(--r3)), hsl(var(--r1)));
+    background-size: 280% 280%;
+    animation: gradient 10s linear infinite;
+    box-shadow: 0 0 25px hsl(var(--r1) / 0.35);
+    will-change: background-position;
+  }
+  .role-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.25) 50%, transparent 65%);
+    background-size: 200% 100%;
+    animation: shimmer 5s linear infinite;
+    pointer-events: none;
+  }
+  .role-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 45px hsl(var(--r1) / 0.6);
+  }
+
+  .role-panel {
+    position: relative;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: linear-gradient(135deg, hsl(var(--r1) / 0.1), hsl(var(--r3) / 0.06));
+    border: 1px solid hsl(var(--r1) / 0.3);
+    box-shadow: 0 0 25px hsl(var(--r1) / 0.15) inset;
+  }
+
+  .role-ring {
+    box-shadow: 0 0 0 4px hsl(var(--r1) / 0.18), 0 0 45px hsl(var(--r1) / 0.4);
+  }
+
+  .role-btn-outline {
+    color: hsl(var(--r1));
+    background: hsl(var(--r1) / 0.14);
+    border: 1px solid hsl(var(--r1) / 0.45);
+    box-shadow: 0 0 22px hsl(var(--r1) / 0.22);
+    transition: background 0.25s ease, box-shadow 0.25s ease;
+  }
+  .role-btn-outline:hover {
+    background: hsl(var(--r1) / 0.24);
+    color: hsl(var(--r1));
+    box-shadow: 0 0 34px hsl(var(--r1) / 0.35);
+  }
+
+  .stat-card {
+    background-color: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(40px);
+    border: 1px solid hsl(var(--primary) / 0.1);
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.4;
+    pointer-events: none;
+    background: var(--gradient-glow);
+  }
+
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-shimmer);
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+    pointer-events: none;
+  }
+}
+
+@utility animate-glow { animation: glow 2.5s ease-in-out infinite alternate; }
+@utility animate-float { animation: float 6s ease-in-out infinite; }
+@utility animate-float-slow { animation: float 9s ease-in-out infinite; }
+@utility animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@utility animate-gradient { background-size: 200% 200%; animation: gradient 5s ease infinite; }
+@utility animate-spin-slow { animation: spin 12s linear infinite; }
+@utility animate-slide-in { animation: slideIn 0.4s ease-out; }
+@utility animate-blob { animation: blob 18s ease-in-out infinite; }
+@utility animate-aurora { background-size: 300% 300%; animation: aurora 15s ease infinite; }
+@utility animate-shimmer { animation: shimmer 2.5s linear infinite; }
+@utility animate-tilt { animation: tilt 10s infinite linear; }
+@utility animate-title-gradient { background-size: 200% 200%; animation: title-gradient 4s ease-in-out infinite; }
+
+@utility bg-gradient-radial { background: radial-gradient(ellipse at center, var(--tw-gradient-stops)); }
+@utility bg-aurora { background: var(--gradient-aurora); background-size: 300% 300%; }
+
+@utility text-glow {
+  text-shadow: 0 0 20px hsl(200 100% 65% / 0.6), 0 0 40px hsl(210 100% 55% / 0.35);
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px hsl(210 100% 55% / 0.25), 0 0 40px hsl(200 100% 55% / 0.15); }
+  to   { box-shadow: 0 0 35px hsl(210 100% 55% / 0.55), 0 0 70px hsl(200 100% 55% / 0.3); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, -40px) scale(1.15); }
+  66% { transform: translate(-40px, 40px) scale(0.9); }
+}
+@keyframes tilt {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(1deg); }
+  75% { transform: rotate(-1deg); }
+}
+@keyframes title-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: hsl(var(--muted)); border-radius: 4px; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, hsl(210 100% 55%), hsl(195 100% 55%));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, hsl(210 100% 65%), hsl(195 100% 65%));
+}
+
+::selection {
+  background: hsl(210 100% 55% / 0.4);
+  color: hsl(var(--foreground));
 }

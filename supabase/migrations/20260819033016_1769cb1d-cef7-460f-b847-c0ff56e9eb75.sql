@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.recalc_recording_likes() FROM anon, authenticated, PUBLIC;
