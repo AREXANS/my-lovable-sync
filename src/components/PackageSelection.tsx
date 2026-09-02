@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAppNavigate as useNavigate } from '@/lib/navigate';
 import AdSlider from './AdSlider';
 import GlobalBackground from './GlobalBackground';
 import { supabase } from '@/integrations/supabase/client';
