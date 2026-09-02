@@ -876,7 +876,7 @@ const ScriptManagement: FC = () => {
                     <input
                       type="file"
                       accept=".lua,.txt"
-                      ref={el => fileInputRefs.current[script.id] = el}
+                      ref={(el) => { fileInputRefs.current[script.id] = el; }}
                       onChange={(e) => handleFileUpload(script.id, e)}
                       className="hidden"
                     />

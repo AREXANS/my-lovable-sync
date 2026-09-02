@@ -1100,7 +1100,7 @@ const LuaUploadManager: FC = () => {
                         <input
                           type="file"
                           accept=".lua,.txt"
-                          ref={(el) => (replaceInputRefs.current[script.id] = el)}
+                          ref={(el) => { replaceInputRefs.current[script.id] = el; }}
                           onChange={(e) => handleReplaceUpload(script, e)}
                           className="hidden"
                         />
