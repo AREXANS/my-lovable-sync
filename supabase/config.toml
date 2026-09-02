@@ -1,0 +1,22 @@
+project_id = "pahxndxofczkcszqhulz"
+
+[functions.get-script]
+verify_jwt = false
+
+[functions.get-loader]
+verify_jwt = false
+
+[functions.payment-webhook]
+verify_jwt = false
+
+[functions.get-keys]
+verify_jwt = false
+
+[functions.validate-key]
+verify_jwt = false
+
+[functions.claim-key]
+verify_jwt = false
+
+[functions.media]
+verify_jwt = false

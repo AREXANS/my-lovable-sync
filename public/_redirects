@@ -1,0 +1,4 @@
+/api/get-script  https://pahxndxofczkcszqhulz.supabase.co/functions/v1/get-script  200
+/api/get-fake-script  https://pahxndxofczkcszqhulz.supabase.co/functions/v1/get-fake-script  200
+/loader  https://pahxndxofczkcszqhulz.supabase.co/functions/v1/get-loader  200
+/*  /index.html  200
