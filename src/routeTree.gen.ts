@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccessDeniedRouteImport } from './routes/access-denied'
+import { Route as DeveloperRouteImport } from './routes/developer'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as KeySystemRouteImport } from './routes/key-system'
+import { Route as XcoinsRouteImport } from './routes/xcoins'
+import { Route as LoaderIndexRouteImport } from './routes/loader/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccessDeniedRoute = AccessDeniedRouteImport.update({
+  id: '/access-denied',
+  path: '/access-denied',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeveloperRoute = DeveloperRouteImport.update({
+  id: '/developer',
+  path: '/developer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KeySystemRoute = KeySystemRouteImport.update({
+  id: '/key-system',
+  path: '/key-system',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const XcoinsRoute = XcoinsRouteImport.update({
+  id: '/xcoins',
+  path: '/xcoins',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoaderIndexRoute = LoaderIndexRouteImport.update({
+  id: '/loader/',
+  path: '/loader/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/developer': typeof DeveloperRoute
+  '/history': typeof HistoryRoute
+  '/key-system': typeof KeySystemRoute
+  '/xcoins': typeof XcoinsRoute
+  '/loader/': typeof LoaderIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/developer': typeof DeveloperRoute
+  '/history': typeof HistoryRoute
+  '/key-system': typeof KeySystemRoute
+  '/xcoins': typeof XcoinsRoute
+  '/loader': typeof LoaderIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/access-denied': typeof AccessDeniedRoute
+  '/developer': typeof DeveloperRoute
+  '/history': typeof HistoryRoute
+  '/key-system': typeof KeySystemRoute
+  '/xcoins': typeof XcoinsRoute
+  '/loader/': typeof LoaderIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/access-denied'
+    | '/developer'
+    | '/history'
+    | '/key-system'
+    | '/xcoins'
+    | '/loader/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/access-denied'
+    | '/developer'
+    | '/history'
+    | '/key-system'
+    | '/xcoins'
+    | '/loader'
+  id:
+    | '__root__'
+    | '/'
+    | '/access-denied'
+    | '/developer'
+    | '/history'
+    | '/key-system'
+    | '/xcoins'
+    | '/loader/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessDeniedRoute: typeof AccessDeniedRoute
+  DeveloperRoute: typeof DeveloperRoute
+  HistoryRoute: typeof HistoryRoute
+  KeySystemRoute: typeof KeySystemRoute
+  XcoinsRoute: typeof XcoinsRoute
+  LoaderIndexRoute: typeof LoaderIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +130,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/access-denied': {
+      id: '/access-denied'
+      path: '/access-denied'
+      fullPath: '/access-denied'
+      preLoaderRoute: typeof AccessDeniedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/developer': {
+      id: '/developer'
+      path: '/developer'
+      fullPath: '/developer'
+      preLoaderRoute: typeof DeveloperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/key-system': {
+      id: '/key-system'
+      path: '/key-system'
+      fullPath: '/key-system'
+      preLoaderRoute: typeof KeySystemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/xcoins': {
+      id: '/xcoins'
+      path: '/xcoins'
+      fullPath: '/xcoins'
+      preLoaderRoute: typeof XcoinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loader/': {
+      id: '/loader/'
+      path: '/loader'
+      fullPath: '/loader/'
+      preLoaderRoute: typeof LoaderIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessDeniedRoute: AccessDeniedRoute,
+  DeveloperRoute: DeveloperRoute,
+  HistoryRoute: HistoryRoute,
+  KeySystemRoute: KeySystemRoute,
+  XcoinsRoute: XcoinsRoute,
+  LoaderIndexRoute: LoaderIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
