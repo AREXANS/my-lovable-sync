@@ -17,12 +17,20 @@ export function useAppNavigate() {
  */
 export function useCompatSearchParams(): [
   URLSearchParams,
-  (params: URLSearchParams) => void,
+  (
+    params: URLSearchParams | Record<string, string>,
+    options?: { replace?: boolean },
+  ) => void,
 ] {
   const searchStr = useRouterState({ select: (s) => s.location.searchStr });
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const params = new URLSearchParams(searchStr);
-  const setParams = (p: URLSearchParams) => {
+  const setParams = (
+    input: URLSearchParams | Record<string, string>,
+    _options?: { replace?: boolean },
+  ) => {
+    const p =
+      input instanceof URLSearchParams ? input : new URLSearchParams(input);
     const qs = p.toString();
     window.history.replaceState(null, "", pathname + (qs ? `?${qs}` : ""));
   };
