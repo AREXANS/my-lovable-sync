@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LoaderAccessDenied from "@/pages/LoaderAccessDenied";
 
-export const Route = createFileRoute("/loader")({
+export const Route = createFileRoute("")({
   ssr: false,
   head: () => ({
     meta: [{ title: "Loader - Arexanstools OFFICIAL" }],
