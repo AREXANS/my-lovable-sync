@@ -456,21 +456,37 @@ const LuaUploadManager: FC = () => {
   // Domain publik (bukan link supabase langsung) — di-rewrite ke edge function
   const PUBLIC_API_BASE = 'https://tools.arexans.my.id/api';
 
+  // Kolom ringan saja — kolom isi script bisa sangat besar dan bikin query timeout.
+  const LIST_COLUMNS =
+    'id, name, display_name, description, script_type, is_active, created_at, updated_at, pinned, archived, category, obfuscate_enabled';
+
   const fetchScripts = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('lua_scripts')
-        .select('*')
+        .select(LIST_COLUMNS)
         .eq('script_type', 'uploaded')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
       if (error) throw error;
-      setScripts(data || []);
+      setScripts(((data || []) as any[]).map((s) => ({ ...s, content: '' })) as UploadedScript[]);
     } catch (e) {
       toast({ title: 'Error', description: 'Gagal mengambil scripts', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+  };
+
+  // Ambil isi lengkap satu script saat benar-benar dibutuhkan (edit/copy/obfuscate).
+  const fetchFull = async (script: UploadedScript): Promise<UploadedScript> => {
+    const { data, error } = await supabase
+      .from('lua_scripts')
+      .select('id, content, raw_content, plain_content, obfuscate_enabled')
+      .eq('id', script.id)
+      .maybeSingle();
+    if (error || !data) return script;
+    return { ...script, ...(data as any) } as UploadedScript;
   };
 
   useEffect(() => { fetchScripts(); }, []);
@@ -519,7 +535,8 @@ const LuaUploadManager: FC = () => {
   const toggleObfuscate = async (script: UploadedScript) => {
     const next = !isObfOn(script);
     try {
-      const p = await buildPayload(script.name, plainOf(script), next);
+      const full = await fetchFull(script);
+      const p = await buildPayload(full.name, plainOf(full), next);
       const { error } = await supabase.from('lua_scripts').update({
         content: p.content, raw_content: p.raw_content, plain_content: p.plain_content,
         obfuscate_enabled: p.obfuscate_enabled, updated_at: new Date().toISOString(),
@@ -637,7 +654,8 @@ const LuaUploadManager: FC = () => {
     setRewrapping(true);
     try {
       for (const s of scripts) {
-        const raw = (s as any).raw_content || unwrap(s.content);
+        const full = await fetchFull(s);
+        const raw = (full as any).plain_content || (full as any).raw_content || unwrap(full.content || '');
         const newWrapped = wrap(s.name, raw);
         await supabase.from('lua_scripts').update({
           content: newWrapped, raw_content: raw, updated_at: new Date().toISOString(),
@@ -705,7 +723,7 @@ const LuaUploadManager: FC = () => {
       return;
     }
     const prev = data[0];
-    const currentContent = script.content || '';
+    const currentContent = (await fetchFull(script)).content || '';
     const { error } = await supabase.from('lua_scripts').update({
       content: prev.content, updated_at: new Date().toISOString(),
     }).eq('id', script.id);
@@ -737,8 +755,8 @@ const LuaUploadManager: FC = () => {
     fetchScripts();
   };
 
-  const copyRawScript = (script: UploadedScript) => {
-    const raw = plainOf(script);
+  const copyRawScript = async (script: UploadedScript) => {
+    const raw = plainOf(await fetchFull(script));
     navigator.clipboard.writeText(raw);
     toast({ title: 'Copied!', description: 'Script mentah disalin' });
   };
@@ -805,14 +823,15 @@ const LuaUploadManager: FC = () => {
     navigator.clipboard.writeText(code);
     toast({ title: 'Copied!', description: 'Loadstring obfuscate (full-hidden) disalin' });
   };
-  const copyIntegratedCode = (script: UploadedScript) => {
-    navigator.clipboard.writeText(script.content || '');
+  const copyIntegratedCode = async (script: UploadedScript) => {
+    const full = await fetchFull(script);
+    navigator.clipboard.writeText(full.content || '');
     toast({ title: 'Copied!', description: 'Kode terintegrasi lengkap disalin' });
   };
 
-  const downloadRawFile = (script: UploadedScript) => {
+  const downloadRawFile = async (script: UploadedScript) => {
     // Download raw (unwrapped) content — no key system / whitelist integration
-    const raw = plainOf(script);
+    const raw = plainOf(await fetchFull(script));
     const fileName = /\.(lua|txt)$/i.test(script.display_name) ? script.display_name : `${script.display_name}.lua`;
     const blob = new Blob([raw], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -854,10 +873,13 @@ const LuaUploadManager: FC = () => {
     }
   };
 
-  const openEditor = (script: UploadedScript) => {
+  const openEditor = async (script: UploadedScript) => {
     setEditScript(script);
-    setEditContent(plainOf(script));
     setEditName(script.display_name);
+    setEditContent('-- memuat isi script...');
+    const full = await fetchFull(script);
+    setEditScript(full);
+    setEditContent(plainOf(full));
   };
 
   const saveEdit = async () => {

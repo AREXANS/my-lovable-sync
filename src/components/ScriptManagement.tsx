@@ -29,6 +29,7 @@ interface LuaScript {
   description: string | null;
   content: string;
   backup_content?: string | null;
+  obfuscate_enabled?: boolean;
   script_type: string;
   is_active: boolean;
   created_at: string;
@@ -510,10 +511,14 @@ const ScriptManagement: FC = () => {
         contentToSave = wrapWithWhitelist(editedContent[script.id]);
       }
 
-      // Otomatis obfuscate setiap kali script diperbarui
-      const obfuscated = await obfuscateSource(contentToSave || '');
-      const wasObfuscated = obfuscated !== contentToSave;
-      contentToSave = obfuscated;
+      // Obfuscate hanya jika sakelar Obfuscate untuk script ini aktif
+      const obfEnabled = script.obfuscate_enabled !== false;
+      let wasObfuscated = false;
+      if (obfEnabled) {
+        const obfuscated = await obfuscateSource(contentToSave || '');
+        wasObfuscated = obfuscated !== contentToSave;
+        contentToSave = obfuscated;
+      }
 
       const payload: any = { updated_at: new Date().toISOString() };
       if (slot === 'primary') payload.content = contentToSave;
@@ -527,7 +532,9 @@ const ScriptManagement: FC = () => {
       if (error) throw error;
 
       const slotLabel = slot === 'primary' ? 'Primary' : 'Backup';
-      const message = `${slotLabel} "${script.display_name}" berhasil disimpan${wasObfuscated ? ' + auto-obfuscated' : ' (obfuscator tidak tersedia, disimpan apa adanya)'}`;
+      const message = !obfEnabled
+        ? `${slotLabel} "${script.display_name}" disimpan tanpa obfuscate`
+        : `${slotLabel} "${script.display_name}" berhasil disimpan${wasObfuscated ? ' + auto-obfuscated' : ' (obfuscator tidak tersedia, disimpan apa adanya)'}`;
 
       
       toast({ title: 'Berhasil', description: message });
@@ -564,6 +571,24 @@ const ScriptManagement: FC = () => {
     }
   };
 
+  const handleToggleObfuscate = async (script: LuaScript) => {
+    const next = script.obfuscate_enabled === false;
+    try {
+      const { error } = await supabase
+        .from('lua_scripts')
+        .update({ obfuscate_enabled: next, updated_at: new Date().toISOString() } as any)
+        .eq('id', script.id);
+      if (error) throw error;
+      toast({
+        title: next ? 'Obfuscate ON' : 'Obfuscate OFF',
+        description: `"${script.display_name}" ${next ? 'akan di-obfuscate saat disimpan' : 'disimpan apa adanya (kode terbaca)'}`,
+      });
+      fetchScripts();
+    } catch {
+      toast({ title: 'Error', description: 'Gagal mengubah status obfuscate', variant: 'destructive' });
+    }
+  };
+
   const slotSuffix = (id: string) => (getSlot(id) === 'backup' ? '&slot=backup' : '');
 
   const getScriptUrl = (script: LuaScript) => {
@@ -591,6 +616,19 @@ const ScriptManagement: FC = () => {
     const code = `loadstring(game:HttpGet("${url}"))()`;
     navigator.clipboard.writeText(code);
     toast({ title: 'Copied!', description: `Loadstring (${getSlot(script.id)}) disalin` });
+  };
+
+  const copyObfuscatedLoadstring = (script: LuaScript) => {
+    const url = getLoaderUrlForExecutor(script);
+    // Sembunyikan seluruh ekspresi (termasuk URL) sebagai XOR+hex, tetap jalan di executor.
+    const key = 1 + Math.floor(Math.random() * 254);
+    const inner = `return game:HttpGet("${url}")`;
+    const hex = Array.from(new TextEncoder().encode(inner))
+      .map((b) => ((b ^ key) & 0xff).toString(16).padStart(2, '0'))
+      .join('');
+    const code = `loadstring(loadstring(("${hex}"):gsub('..',function(h)return string.char(bit32.bxor(tonumber(h,16),${key}))end))())()`;
+    navigator.clipboard.writeText(code);
+    toast({ title: 'Copied!', description: 'Loadstring ter-obfuscate disalin' });
   };
 
   const getScriptTypeColor = (name: string) => {
@@ -831,6 +869,15 @@ const ScriptManagement: FC = () => {
                     <span className={`text-xs sm:text-sm ${script.is_active ? 'text-secondary' : 'text-muted-foreground'}`}>
                       {script.is_active ? 'Active' : 'Inactive'}
                     </span>
+                    <span className="mx-1 h-4 w-px bg-border" />
+                    <Switch
+                      checked={script.obfuscate_enabled !== false}
+                      onCheckedChange={() => handleToggleObfuscate(script)}
+                    />
+                    <span className={`text-xs sm:text-sm flex items-center gap-1 ${script.obfuscate_enabled !== false ? 'text-cyan-400' : 'text-muted-foreground'}`}>
+                      <Shield className="w-3 h-3" />
+                      Obf {script.obfuscate_enabled !== false ? 'ON' : 'OFF'}
+                    </span>
                   </div>
                   {hasChanges(script) && (
                     <span className="flex items-center gap-1 text-xs text-yellow-500">
@@ -1049,10 +1096,22 @@ const ScriptManagement: FC = () => {
                         {`loadstring(game:HttpGet("${getLoaderUrlForExecutor(script)}"))()`}
                       </code>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => copyLoadstringCode(script)} className="w-full text-xs">
-                      <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                      Copy Loadstring
-                    </Button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button variant="outline" size="sm" onClick={() => copyLoadstringCode(script)} className="w-full text-xs">
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        Copy Loadstring
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyObfuscatedLoadstring(script)}
+                        className="w-full text-xs border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
+                        title="Salin loadstring dengan URL ter-obfuscate"
+                      >
+                        <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        Loadstring Obfuscate
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
