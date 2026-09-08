@@ -529,14 +529,37 @@ const LuaUploadManager: FC = () => {
     };
   };
 
-  const plainOf = (script: UploadedScript) =>
-    (script as any).plain_content || (script as any).raw_content || unwrap(script.content || '');
+  /**
+   * Sumber kode terbaca (plain) dari sebuah script.
+   * PENTING: raw_content bisa berisi hasil obfuscate kalau sakelar sedang ON,
+   * jadi jangan pernah dipakai sebagai "plain" dalam kondisi itu.
+   */
+  const plainOf = (script: UploadedScript) => {
+    const plain = (script as any).plain_content as string | null | undefined;
+    if (plain && plain.trim()) return plain;
+    const rawc = (script as any).raw_content as string | null | undefined;
+    if (!isObfOn(script) && rawc && rawc.trim()) return rawc;
+    return unwrap(script.content || '');
+  };
 
   const toggleObfuscate = async (script: UploadedScript) => {
     const next = !isObfOn(script);
     try {
       const full = await fetchFull(script);
-      const p = await buildPayload(full.name, plainOf(full), next);
+      const plain = plainOf(full);
+      const hasPlain = Boolean(((full as any).plain_content || '').trim());
+
+      if (!next && !hasPlain) {
+        // Tidak ada salinan kode terbaca tersimpan → tidak bisa dikembalikan ke mentah.
+        toast({
+          title: 'Tidak bisa dimatikan',
+          description: `"${script.display_name}" tidak menyimpan kode aslinya. Upload / paste ulang script ini sekali lagi, setelah itu sakelar Obf bisa dimatikan kapan saja.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const p = await buildPayload(full.name, plain, next);
       const { error } = await supabase.from('lua_scripts').update({
         content: p.content, raw_content: p.raw_content, plain_content: p.plain_content,
         obfuscate_enabled: p.obfuscate_enabled, updated_at: new Date().toISOString(),
@@ -544,13 +567,14 @@ const LuaUploadManager: FC = () => {
       if (error) throw error;
       toast({
         title: next ? 'Obfuscate ON' : 'Obfuscate OFF',
-        description: `"${script.display_name}" ${next ? 'di-obfuscate (payload + kode integrasi)' : 'dikembalikan ke kode terbaca'}`,
+        description: `"${script.display_name}" ${next ? 'di-obfuscate (payload + kode integrasi)' : 'langsung dikembalikan ke kode mentah/terbaca'}`,
       });
       fetchScripts();
     } catch {
       toast({ title: 'Error', description: 'Gagal mengubah status obfuscate', variant: 'destructive' });
     }
   };
+
 
 
   const unwrap = (wrapped: string): string => {
