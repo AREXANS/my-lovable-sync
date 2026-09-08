@@ -456,21 +456,37 @@ const LuaUploadManager: FC = () => {
   // Domain publik (bukan link supabase langsung) — di-rewrite ke edge function
   const PUBLIC_API_BASE = 'https://tools.arexans.my.id/api';
 
+  // Kolom ringan saja — kolom isi script bisa sangat besar dan bikin query timeout.
+  const LIST_COLUMNS =
+    'id, name, display_name, description, script_type, is_active, created_at, updated_at, pinned, archived, category, obfuscate_enabled';
+
   const fetchScripts = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('lua_scripts')
-        .select('*')
+        .select(LIST_COLUMNS)
         .eq('script_type', 'uploaded')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
       if (error) throw error;
-      setScripts(data || []);
+      setScripts(((data || []) as any[]).map((s) => ({ ...s, content: '' })) as UploadedScript[]);
     } catch (e) {
       toast({ title: 'Error', description: 'Gagal mengambil scripts', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+  };
+
+  // Ambil isi lengkap satu script saat benar-benar dibutuhkan (edit/copy/obfuscate).
+  const fetchFull = async (script: UploadedScript): Promise<UploadedScript> => {
+    const { data, error } = await supabase
+      .from('lua_scripts')
+      .select('id, content, raw_content, plain_content, obfuscate_enabled')
+      .eq('id', script.id)
+      .maybeSingle();
+    if (error || !data) return script;
+    return { ...script, ...(data as any) } as UploadedScript;
   };
 
   useEffect(() => { fetchScripts(); }, []);
