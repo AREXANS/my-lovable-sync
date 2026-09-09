@@ -993,6 +993,42 @@ const LuaUploadManager: FC = () => {
       <Card className="glass-card">
         <CardContent className="p-4 sm:p-6">
           <input type="file" accept=".lua,.txt" ref={fileInputRef} onChange={handleUpload} className="hidden" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+            <Input
+              value={uploadDisplayName}
+              onChange={(e) => setUploadDisplayName(e.target.value)}
+              placeholder="Nama script (contoh: Violence District V1)"
+              className="h-9 text-xs bg-black/20"
+            />
+            <div className="flex gap-2">
+              <select
+                value={uploadCategory}
+                onChange={(e) => setUploadCategory(e.target.value)}
+                className="h-9 flex-1 rounded-md border border-border bg-black/20 px-2 text-xs"
+              >
+                {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="__new__">+ Kategori baru…</option>
+              </select>
+              {uploadCategory === '__new__' && (
+                <Input
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="nama kategori"
+                  className="h-9 text-xs bg-black/20 flex-1"
+                />
+              )}
+            </div>
+            <Input
+              value={uploadDescription}
+              onChange={(e) => setUploadDescription(e.target.value)}
+              placeholder="Deskripsi script (opsional)"
+              className="h-9 text-xs bg-black/20 sm:col-span-2"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Kosongkan nama → dipakai nama file (tanpa .lua). Kosongkan deskripsi → otomatis "Script Premium Arexans &lt;nama&gt;".
+          </p>
           <div
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-primary/30 rounded-xl p-6 sm:p-8 text-center cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all"
