@@ -1158,7 +1158,16 @@ ${GAME_TAB_END}`;
                         ))}
                       </div>
                     )}
+                    <Button
+                      size="sm"
+                      onClick={integrateGameTabToMain}
+                      disabled={saving !== null}
+                      className="w-full text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
+                    >
+                      <Database className="w-3 h-3 mr-1" /> Integrasikan ke Main Script (otomatis)
+                    </Button>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
                       <Button
                         variant="outline"
                         size="sm"
