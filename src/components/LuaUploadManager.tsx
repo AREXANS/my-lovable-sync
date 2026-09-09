@@ -606,7 +606,11 @@ const LuaUploadManager: FC = () => {
     setUploading(true);
     try {
       const rawOriginal = await file.text();
-      const scriptName = file.name.replace(/\.(lua|txt)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+      const fileBase = file.name.replace(/\.(lua|txt)$/i, '');
+      const title = uploadDisplayName.trim() || fileBase;
+      const desc = uploadDescription.trim() || `Script Premium Arexans ${title}`;
+      const category = resolveUploadCategory();
+      const scriptName = title.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
 
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
@@ -616,20 +620,23 @@ const LuaUploadManager: FC = () => {
 
       if (existing) {
         const { error } = await supabase.from('lua_scripts')
-          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
+          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, display_name: title, description: desc, category, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
         if (error) throw error;
-        toast({ title: 'Berhasil', description: `"${file.name}" diupdate${wasObfuscated ? ' + auto-obfuscated' : ''}` });
+        toast({ title: 'Berhasil', description: `"${title}" diupdate${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       } else {
         const { error } = await supabase.from('lua_scripts').insert({
-          name: dbName, display_name: file.name,
-          description: `Auto-integrated: key system${wasObfuscated ? ' + obfuscated' : ''}`,
+          name: dbName, display_name: title,
+          description: desc, category,
           content: p.content, raw_content: p.raw_content, plain_content: p.plain_content,
           obfuscate_enabled: enabled, script_type: 'uploaded', is_active: true,
         } as any);
         if (error) throw error;
-        toast({ title: 'Berhasil', description: `"${file.name}" diupload${wasObfuscated ? ' + auto-obfuscated' : ''}` });
+        toast({ title: 'Berhasil', description: `"${title}" diupload ke kategori ${category}${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       }
 
+      setUploadDisplayName('');
+      setUploadDescription('');
+      setNewCategoryName('');
       fetchScripts();
     } catch (e) {
       toast({ title: 'Error', description: 'Gagal upload', variant: 'destructive' });
