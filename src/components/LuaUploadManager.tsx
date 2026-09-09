@@ -970,133 +970,221 @@ const LuaUploadManager: FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-lg sm:text-xl font-display font-semibold flex items-center gap-2">
-            <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-            <span className="truncate">Upload Lua Scripts</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Upload .lua — otomatis terintegrasi key system + whitelist database
-          </p>
+      {/* Header section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-card/60 backdrop-blur border border-border/50 shadow-sm">
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <Upload className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-display font-semibold tracking-tight text-foreground flex items-center gap-2">
+                Manager Script Lua
+                <Badge variant="outline" className="text-[10px] px-2 py-0 border-primary/30 bg-primary/5 text-primary">
+                  Auto-Protected
+                </Badge>
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Upload & kelola script .lua dengan proteksi Key System + Whitelist database otomatis
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-1 flex-shrink-0">
-          <Button variant="outline" size="sm" onClick={reWrapAll} disabled={rewrapping || scripts.length === 0} title="Re-wrap semua dengan wrapper terbaru">
-            <RotateCcw className={`w-4 h-4 ${rewrapping ? 'animate-spin' : ''}`} />
+
+        <div className="flex items-center gap-2 self-end sm:self-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={reWrapAll}
+            disabled={rewrapping || scripts.length === 0}
+            title="Re-wrap semua script dengan versi wrapper terbaru"
+            className="text-xs h-9 gap-1.5 border-border hover:bg-muted"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${rewrapping ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">Re-wrap All</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={fetchScripts} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchScripts}
+            disabled={loading}
+            title="Refresh daftar script"
+            className="text-xs h-9 gap-1.5 border-border hover:bg-muted"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
       </div>
 
-      <Card className="glass-card">
-        <CardContent className="p-4 sm:p-6">
+      {/* Upload card */}
+      <Card className="glass-card overflow-hidden border-border/60 shadow-md">
+        <CardHeader className="pb-3 border-b border-border/30 bg-black/20">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <FileCode className="w-4 h-4 text-primary" />
+              Upload Script Baru
+            </CardTitle>
+            <span className="text-[11px] text-muted-foreground">Format yang didukung: .lua, .txt</span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-5 space-y-4">
           <input type="file" accept=".lua,.txt" ref={fileInputRef} onChange={handleUpload} className="hidden" />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-            <Input
-              value={uploadDisplayName}
-              onChange={(e) => setUploadDisplayName(e.target.value)}
-              placeholder="Nama script (contoh: Violence District V1)"
-              className="h-9 text-xs bg-black/20"
-            />
-            <div className="flex gap-2">
-              <select
-                value={uploadCategory}
-                onChange={(e) => setUploadCategory(e.target.value)}
-                className="h-9 flex-1 rounded-md border border-border bg-black/20 px-2 text-xs"
-              >
-                {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
-                <option value="__new__">+ Kategori baru…</option>
-              </select>
-              {uploadCategory === '__new__' && (
-                <Input
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="nama kategori"
-                  className="h-9 text-xs bg-black/20 flex-1"
-                />
-              )}
+          {/* Form metadata */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] font-medium text-muted-foreground">Nama Display Script</label>
+              <Input
+                value={uploadDisplayName}
+                onChange={(e) => setUploadDisplayName(e.target.value)}
+                placeholder="Contoh: Violence District V1"
+                className="h-9 text-xs bg-black/30 border-border/60 focus:border-primary"
+              />
             </div>
-            <Input
-              value={uploadDescription}
-              onChange={(e) => setUploadDescription(e.target.value)}
-              placeholder="Deskripsi script (opsional)"
-              className="h-9 text-xs bg-black/20 sm:col-span-2"
-            />
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-medium text-muted-foreground">Kategori Script</label>
+              <div className="flex gap-2">
+                <select
+                  value={uploadCategory}
+                  onChange={(e) => setUploadCategory(e.target.value)}
+                  className="h-9 flex-1 rounded-md border border-border/60 bg-black/30 px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {allCategories.map((c) => (
+                    <option key={c} value={c} className="bg-popover text-popover-foreground">{c}</option>
+                  ))}
+                  <option value="__new__" className="bg-popover text-popover-foreground">+ Kategori baru…</option>
+                </select>
+                {uploadCategory === '__new__' && (
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Nama kategori baru"
+                    className="h-9 text-xs bg-black/30 border-border/60 flex-1 focus:border-primary"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-[11px] font-medium text-muted-foreground">Deskripsi (Opsional)</label>
+              <Input
+                value={uploadDescription}
+                onChange={(e) => setUploadDescription(e.target.value)}
+                placeholder="Deskripsi singkat mengenai fitur atau fungsi script..."
+                className="h-9 text-xs bg-black/30 border-border/60 focus:border-primary"
+              />
+              <p className="text-[10px] text-muted-foreground/80 pt-0.5">
+                • Jika nama dikosongkan, nama file asli akan digunakan. Jika deskripsi dikosongkan, deskripsi default akan dibuat otomatis.
+              </p>
+            </div>
           </div>
-          <p className="text-[10px] text-muted-foreground mb-2">
-            Kosongkan nama → dipakai nama file (tanpa .lua). Kosongkan deskripsi → otomatis "Script Premium Arexans &lt;nama&gt;".
-          </p>
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-primary/30 rounded-xl p-6 sm:p-8 text-center cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all"
-          >
-            <Upload className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 text-primary/50" />
-            <p className="text-sm font-medium mb-1">{uploading ? 'Uploading...' : 'Klik untuk upload file Lua'}</p>
-            <p className="text-xs text-muted-foreground">File .lua atau .txt — auto-wrap key system + whitelist</p>
+
+          {/* Upload dropzone & action buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="md:col-span-2 border-2 border-dashed border-primary/30 hover:border-primary/60 rounded-xl p-5 text-center cursor-pointer bg-primary/5 hover:bg-primary/10 transition-all group flex flex-col items-center justify-center min-h-[100px]"
+            >
+              <div className="p-2.5 rounded-full bg-primary/10 group-hover:scale-110 transition-transform mb-2">
+                <Upload className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-xs font-semibold text-foreground">
+                {uploading ? 'Mengunggah file...' : 'Klik atau tarik file .lua / .txt di sini'}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Script akan otomatis dibungkus dengan Key System & Whitelist Validation
+              </p>
+            </div>
+
+            <div className="flex flex-col justify-between gap-2 p-3 rounded-xl bg-black/20 border border-border/40">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <ClipboardPaste className="w-3.5 h-3.5 text-cyan-400" />
+                  Paste dari Clipboard
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Upload langsung dari teks Lua yang tersimpan di clipboard perangkat Anda.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs h-9 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-200 gap-1.5 font-medium"
+                onClick={handlePasteUpload}
+                disabled={uploading}
+              >
+                <ClipboardPaste className="w-3.5 h-3.5" />
+                Paste & Upload
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-2 text-xs h-9 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
-            onClick={handlePasteUpload}
-            disabled={uploading}
-          >
-            <ClipboardPaste className="w-3 h-3 mr-1" />
-            Upload dari Clipboard (Paste)
-          </Button>
-          <div className="mt-3 p-2 rounded bg-primary/10 border border-primary/20">
-            <div className="flex items-start gap-2 text-xs text-primary">
-              <Shield className="w-3 h-3 flex-shrink-0 mt-0.5" />
-              <span>Script otomatis cek <code className="text-[10px]">ArexansTools_Session.json</code> → kalau key valid langsung jalan, kalau tidak cek whitelist, kalau bukan whitelist minta input key.</span>
+
+          {/* Info banner */}
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary flex items-start gap-2.5">
+            <Shield className="w-4 h-4 flex-shrink-0 mt-0.5 text-primary" />
+            <div className="space-y-0.5 text-[11px]">
+              <p className="font-semibold text-primary">Mekanisme Proteksi Otomatis:</p>
+              <p className="text-muted-foreground leading-relaxed">
+                Script yang diupload akan mengecek session cache <code className="bg-black/40 px-1 py-0.5 rounded font-mono text-[10px] text-cyan-300">ArexansTools_Session.json</code>. Jika valid, script langsung berjalan. Jika tidak, sistem mengecek Whitelist Username, lalu menampilkan UI Key System jika belum terverifikasi.
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="glass-card">
-        <CardHeader className="pb-3 px-3 sm:px-6 space-y-3">
-          <div>
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-primary" />
-              Script Ter-upload ({filteredScripts.length}/{scripts.length})
-            </CardTitle>
-            <CardDescription className="text-xs mt-1">
-              Semua script terproteksi key system · sematkan yang sering dipakai, arsipkan yang lama
-            </CardDescription>
+      {/* Script List Card */}
+      <Card className="glass-card border-border/60 shadow-md">
+        <CardHeader className="pb-3 px-4 sm:px-6 space-y-3.5 border-b border-border/30 bg-black/20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                <FileCode className="w-4 h-4 text-primary" />
+                Daftar Script Ter-upload
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-full font-mono bg-primary/10 text-primary border border-primary/20">
+                  {filteredScripts.length} / {scripts.length}
+                </Badge>
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Kelola script, atur kategori, obfusikasi, edit kode, dan salin link/loadstring
+              </CardDescription>
+            </div>
+
+            {/* Tab navigation buttons */}
+            <div className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-black/40 border border-border/60 self-start sm:self-auto">
+              {([
+                { k: 'semua', label: 'Semua', icon: FileCode },
+                { k: 'sematkan', label: 'Disematkan', icon: Pin },
+                { k: 'arsip', label: 'Arsip', icon: Archive },
+              ] as const).map(({ k, label, icon: Icon }) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setTab(k)}
+                  className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium transition-all ${
+                    tab === k
+                      ? 'bg-primary/20 text-primary border border-primary/40 shadow-sm'
+                      : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="w-3 h-3" />
+                  <span>{label}</span>
+                  <span className="text-[10px] opacity-75 font-mono">({counts[k]})</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-1 p-1 rounded-lg bg-black/30 border border-border/60">
-            {([
-              { k: 'semua', label: 'Semua', icon: FileCode },
-              { k: 'sematkan', label: 'Sematkan', icon: Pin },
-              { k: 'arsip', label: 'Arsip', icon: Archive },
-            ] as const).map(({ k, label, icon: Icon }) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setTab(k)}
-                className={`flex items-center justify-center gap-1 rounded-md py-1.5 text-[11px] font-medium transition-colors ${
-                  tab === k ? 'bg-primary/20 text-primary border border-primary/40' : 'text-muted-foreground hover:bg-muted/40'
-                }`}
-              >
-                <Icon className="w-3 h-3" />
-                {label}
-                <span className="opacity-70">({counts[k]})</span>
-              </button>
-            ))}
-          </div>
-
+          {/* Search & Category Filtering Controls */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari script (nama / isi kode)..."
-                className="pl-9 h-9 text-xs bg-black/20"
+                placeholder="Cari nama script, deskripsi..."
+                className="pl-9 h-9 text-xs bg-black/30 border-border/60 focus:border-primary"
               />
             </div>
             <div className="relative">
@@ -1104,8 +1192,8 @@ const LuaUploadManager: FC = () => {
               <Input
                 value={categoryQuery}
                 onChange={(e) => setCategoryQuery(e.target.value)}
-                placeholder="Cari kategori..."
-                className="pl-9 h-9 text-xs bg-black/20"
+                placeholder="Filter berdasarkan kategori..."
+                className="pl-9 h-9 text-xs bg-black/30 border-border/60 focus:border-primary"
                 list="upload-script-categories"
               />
               <datalist id="upload-script-categories">
@@ -1114,24 +1202,30 @@ const LuaUploadManager: FC = () => {
             </div>
           </div>
 
+          {/* Quick Category Chips */}
           {categories.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] text-muted-foreground font-medium mr-1">Filter Cepat:</span>
               <button
                 type="button"
                 onClick={() => setCategoryQuery('')}
-                className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-                  cq === '' ? 'border-primary/50 bg-primary/15 text-primary' : 'border-border text-muted-foreground hover:bg-muted/40'
+                className={`text-[10px] px-2.5 py-0.5 rounded-full border transition-all ${
+                  cq === ''
+                    ? 'border-primary/50 bg-primary/20 text-primary font-medium'
+                    : 'border-border/60 bg-black/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                 }`}
               >
-                Semua kategori
+                Semua ({scripts.length})
               </button>
               {categories.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setCategoryQuery(c)}
-                  className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-                    cq === c.toLowerCase() ? 'border-primary/50 bg-primary/15 text-primary' : 'border-border text-muted-foreground hover:bg-muted/40'
+                  className={`text-[10px] px-2.5 py-0.5 rounded-full border transition-all ${
+                    cq === c.toLowerCase()
+                      ? 'border-primary/50 bg-primary/20 text-primary font-medium'
+                      : 'border-border/60 bg-black/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                   }`}
                 >
                   {c}
@@ -1141,212 +1235,365 @@ const LuaUploadManager: FC = () => {
           )}
         </CardHeader>
 
-        <CardContent className="px-3 sm:px-6">
+        <CardContent className="p-3 sm:p-5">
           {filteredScripts.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileCode className="w-12 h-12 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">{scripts.length === 0 ? 'Belum ada script' : 'Tidak ada script yang cocok'}</p>
+            <div className="text-center py-12 px-4 border border-dashed border-border/50 rounded-xl bg-black/10 space-y-2">
+              <FileCode className="w-10 h-10 mx-auto text-muted-foreground/40" />
+              <p className="text-sm font-medium text-foreground">
+                {scripts.length === 0 ? 'Belum Ada Script Ter-upload' : 'Tidak Ada Script yang Cocok'}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                {scripts.length === 0
+                  ? 'Gunakan form di atas untuk mengunggah file script Lua pertama Anda.'
+                  : 'Coba ubah kata kunci pencarian atau ganti filter kategori.'}
+              </p>
             </div>
           ) : (
-            <div className="max-h-[75vh] overflow-y-auto pr-1">
-              <div className="space-y-3">
-                {filteredScripts.map((script) => (
-                  <div
-                    key={script.id}
-                    className={`p-3 rounded-lg border transition-colors space-y-2 ${
-                      script.archived
-                        ? 'bg-muted/20 border-border/50 opacity-80'
-                        : script.pinned
-                          ? 'bg-primary/5 border-primary/30'
-                          : 'bg-muted/30 hover:bg-muted/50 border-border/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {script.pinned && <Pin className="w-3 h-3 text-primary flex-shrink-0" />}
-                          <p className="font-medium text-sm truncate">{script.display_name}</p>
-                          <span className="inline-flex items-center gap-1">
-                            <Tag className="w-2.5 h-2.5 text-cyan-300" />
-                            <select
-                              value={newCatForId === script.id ? '__new__' : catOf(script)}
-                              onChange={(e) => {
-                                if (e.target.value === '__new__') {
-                                  setNewCatForId(script.id);
-                                  setNewCatValue('');
-                                } else {
-                                  setNewCatForId(null);
-                                  setCategory(script, e.target.value);
-                                }
-                              }}
-                              title="Ubah kategori"
-                              className="text-[10px] rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-1.5 py-0.5"
-                            >
-                              {Array.from(new Set([...allCategories, catOf(script)])).map((c) => (
-                                <option key={c} value={c}>{c}</option>
-                              ))}
-                              <option value="__new__">+ Baru…</option>
-                            </select>
-                            {newCatForId === script.id && (
-                              <Input
-                                autoFocus
-                                value={newCatValue}
-                                onChange={(e) => setNewCatValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && newCatValue.trim()) {
-                                    setCategory(script, newCatValue);
-                                    setNewCatForId(null);
-                                  }
-                                  if (e.key === 'Escape') setNewCatForId(null);
-                                }}
-                                onBlur={() => {
-                                  if (newCatValue.trim()) setCategory(script, newCatValue);
-                                  setNewCatForId(null);
-                                }}
-                                placeholder="kategori baru"
-                                className="h-6 w-28 text-[10px] bg-black/20"
-                              />
-                            )}
+            <div className="max-h-[75vh] overflow-y-auto pr-1 space-y-3">
+              {filteredScripts.map((script) => (
+                <div
+                  key={script.id}
+                  className={`p-3.5 sm:p-4 rounded-xl border transition-all space-y-3 shadow-sm ${
+                    script.archived
+                      ? 'bg-muted/15 border-border/40 opacity-75'
+                      : script.pinned
+                        ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20'
+                        : 'bg-card/40 hover:bg-card/70 border-border/50'
+                  }`}
+                >
+                  {/* Script Item Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-2 border-b border-border/30">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {script.pinned && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
+                            <Pin className="w-3 h-3" /> Disematkan
                           </span>
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            <Shield className="w-2.5 h-2.5 mr-0.5" />KeySystem
-                          </Badge>
-                          {script.archived && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/40 text-amber-400">
-                              Arsip
-                            </Badge>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => toggleObfuscate(script)}
-                            title={isObfOn(script) ? 'Obfuscate aktif — klik untuk matikan' : 'Obfuscate mati — klik untuk aktifkan'}
-                            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
-                              isObfOn(script)
-                                ? 'border-primary/50 bg-primary/15 text-primary'
-                                : 'border-border bg-muted/40 text-muted-foreground'
-                            }`}
-                          >
-                            Obf {isObfOn(script) ? 'ON' : 'OFF'}
-                          </button>
-                        </div>
-                        {script.description && (
-                          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{script.description}</p>
                         )}
-                        <p className="text-[10px] text-muted-foreground mt-1">{new Date(script.updated_at).toLocaleString('id-ID')}</p>
+                        <h3 className="font-semibold text-sm sm:text-base text-foreground truncate break-all">
+                          {script.display_name}
+                        </h3>
+
+                        {/* Category selector badge */}
+                        <div className="inline-flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-cyan-400" />
+                          <select
+                            value={newCatForId === script.id ? '__new__' : catOf(script)}
+                            onChange={(e) => {
+                              if (e.target.value === '__new__') {
+                                setNewCatForId(script.id);
+                                setNewCatValue('');
+                              } else {
+                                setNewCatForId(null);
+                                setCategory(script, e.target.value);
+                              }
+                            }}
+                            title="Ubah kategori"
+                            className="text-[10px] rounded-md border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-400 font-medium cursor-pointer"
+                          >
+                            {Array.from(new Set([...allCategories, catOf(script)])).map((c) => (
+                              <option key={c} value={c} className="bg-popover text-popover-foreground">{c}</option>
+                            ))}
+                            <option value="__new__" className="bg-popover text-popover-foreground">+ Baru…</option>
+                          </select>
+                          {newCatForId === script.id && (
+                            <Input
+                              autoFocus
+                              value={newCatValue}
+                              onChange={(e) => setNewCatValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newCatValue.trim()) {
+                                  setCategory(script, newCatValue);
+                                  setNewCatForId(null);
+                                }
+                                if (e.key === 'Escape') setNewCatForId(null);
+                              }}
+                              onBlur={() => {
+                                if (newCatValue.trim()) setCategory(script, newCatValue);
+                                setNewCatForId(null);
+                              }}
+                              placeholder="Kategori baru..."
+                              className="h-6 w-28 text-[10px] bg-black/40 border-cyan-400/50 text-cyan-200 focus:border-cyan-400"
+                            />
+                          )}
+                        </div>
+
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
+                          <Shield className="w-2.5 h-2.5 mr-1" /> KeySystem Active
+                        </Badge>
+
+                        {script.archived && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/40 text-amber-400 bg-amber-500/10">
+                            Arsip
+                          </Badge>
+                        )}
+
+                        {/* Obfuscate toggle */}
+                        <button
+                          type="button"
+                          onClick={() => toggleObfuscate(script)}
+                          title={isObfOn(script) ? 'Obfuscate aktif — Klik untuk mematikan' : 'Obfuscate mati — Klik untuk mengaktifkan'}
+                          className={`text-[10px] px-2 py-0.5 rounded-md border font-semibold transition-all ${
+                            isObfOn(script)
+                              ? 'border-primary/50 bg-primary/20 text-primary shadow-sm'
+                              : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          Obf {isObfOn(script) ? 'ON' : 'OFF'}
+                        </button>
                       </div>
 
-                      <div className="flex items-center gap-0.5 flex-shrink-0 flex-wrap justify-end">
-                        <input
-                          type="file"
-                          accept=".lua,.txt"
-                          ref={(el) => { replaceInputRefs.current[script.id] = el; }}
-                          onChange={(e) => handleReplaceUpload(script, e)}
-                          className="hidden"
-                        />
-                        <Button variant="ghost" size="sm" onClick={() => togglePin(script)} title={script.pinned ? 'Lepas sematan' : 'Sematkan script'} className={`h-8 w-8 p-0 ${script.pinned ? 'text-primary' : ''}`}>
-                          {script.pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => toggleArchive(script)} title={script.archived ? 'Keluarkan dari arsip' : 'Arsipkan script'} className={`h-8 w-8 p-0 ${script.archived ? 'text-amber-400' : ''}`}>
-                          {script.archived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
-                        </Button>
+                      {script.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2 pt-0.5">{script.description}</p>
+                      )}
 
-                        <Button variant="ghost" size="sm" onClick={() => openEditor(script)} title="Edit isi script" className="h-8 w-8 p-0">
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => renameScript(script)} title="Ganti nama script" className="h-8 w-8 p-0">
-                          <Type className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => replaceInputRefs.current[script.id]?.click()} title="Upload ulang / ganti file" className="h-8 w-8 p-0">
-                          <Replace className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => undoToPrevious(script)} title="Undo ke versi sebelumnya" className="h-8 w-8 p-0">
-                          <Undo2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => redoToNext(script)}
-                          disabled={!(redoStacks[script.id]?.length)}
-                          title="Redo ke versi setelahnya"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Redo2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openHistory(script)} title="Lihat history versi" className="h-8 w-8 p-0">
-                          <HistoryIcon className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => deleteScript(script.id, script.display_name)} title="Hapus script" className="text-destructive hover:text-destructive h-8 w-8 p-0">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground/80 font-mono pt-0.5">
+                        <span>ID: {script.name}</span>
+                        <span>•</span>
+                        <span>Diupdate: {new Date(script.updated_at).toLocaleString('id-ID')}</span>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex gap-1.5">
-                        <Input readOnly value={getScriptUrl(script.name)} className="font-mono text-[10px] h-7 bg-black/30" />
-                        <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Salin URL" onClick={() => copyUrl(script.name)}>
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Buka URL" onClick={() => window.open(getScriptUrl(script.name), '_blank')}>
-                          <ExternalLink className="w-3 h-3" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <Button variant="outline" size="sm" className="text-xs h-7" title="Salin loadstring untuk executor" onClick={() => copyLoadstring(script.name)}>
-                          <Copy className="w-3 h-3 mr-1" />
-                          Loadstring
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs h-7" title="Salin kode terintegrasi (key + whitelist)" onClick={() => copyIntegratedCode(script)}>
-                          <FileCode className="w-3 h-3 mr-1" />
-                          Kode Integrasi
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs h-7" title="Salin script mentah (tanpa integrasi)" onClick={() => copyRawScript(script)}>
-                          <Copy className="w-3 h-3 mr-1" />
-                          Salin Mentah
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs h-7" title="Ganti isi script dari clipboard" onClick={() => pasteIntoScript(script)}>
-                          <ClipboardPaste className="w-3 h-3 mr-1" />
-                          Paste
-                        </Button>
+                    {/* Toolbar Action Icons */}
+                    <div className="flex items-center gap-1 flex-wrap justify-end p-1 rounded-lg bg-black/20 border border-border/30 self-end sm:self-start">
+                      <input
+                        type="file"
+                        accept=".lua,.txt"
+                        ref={(el) => { replaceInputRefs.current[script.id] = el; }}
+                        onChange={(e) => handleReplaceUpload(script, e)}
+                        className="hidden"
+                      />
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => togglePin(script)}
+                        title={script.pinned ? 'Lepas sematan' : 'Sematkan script'}
+                        className={`h-8 w-8 p-0 hover:bg-primary/20 ${script.pinned ? 'text-primary' : 'text-muted-foreground'}`}
+                      >
+                        {script.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleArchive(script)}
+                        title={script.archived ? 'Keluarkan dari arsip' : 'Arsipkan script'}
+                        className={`h-8 w-8 p-0 hover:bg-amber-500/20 ${script.archived ? 'text-amber-400' : 'text-muted-foreground'}`}
+                      >
+                        {script.archived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                      </Button>
+
+                      <div className="w-[1px] h-4 bg-border/40 mx-0.5" />
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditor(script)}
+                        title="Edit kode script"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => renameScript(script)}
+                        title="Ubah nama script"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      >
+                        <Type className="w-3.5 h-3.5" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => replaceInputRefs.current[script.id]?.click()}
+                        title="Ganti file script"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      >
+                        <Replace className="w-3.5 h-3.5" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => undoToPrevious(script)}
+                        title="Undo ke versi sebelumnya"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      >
+                        <Undo2 className="w-3.5 h-3.5" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => redoToNext(script)}
+                        disabled={!(redoStacks[script.id]?.length)}
+                        title="Redo ke versi setelahnya"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30"
+                      >
+                        <Redo2 className="w-3.5 h-3.5" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openHistory(script)}
+                        title="Lihat riwayat versi"
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      >
+                        <HistoryIcon className="w-3.5 h-3.5" />
+                      </Button>
+
+                      <div className="w-[1px] h-4 bg-border/40 mx-0.5" />
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteScript(script.id, script.display_name)}
+                        title="Hapus script"
+                        className="h-8 w-8 p-0 text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* URL Bar & Copy Buttons Grid */}
+                  <div className="space-y-2 pt-1">
+                    {/* API Raw URL */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="relative flex-1">
+                        <Input
+                          readOnly
+                          value={getScriptUrl(script.name)}
+                          className="font-mono text-[11px] h-8 bg-black/40 border-border/50 text-muted-foreground pr-8 select-all"
+                        />
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-xs h-7 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
-                        title="Salin loadstring dengan URL ter-obfuscate (tetap jalan di executor)"
-                        onClick={() => copyObfuscatedLoadstring(script.name)}
+                        className="h-8 px-2.5 text-xs gap-1 border-border/60 hover:bg-muted"
+                        title="Salin URL endpoint script"
+                        onClick={() => copyUrl(script.name)}
                       >
-                        <Shield className="w-3 h-3 mr-1" />
-                        Loadstring Obfuscate
+                        <Copy className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Salin URL</span>
                       </Button>
-                      <Button variant="outline" size="sm" className="w-full text-xs h-7" title="Unduh file mentah tanpa integrasi" onClick={() => downloadRawFile(script)}>
-                        <Download className="w-3 h-3 mr-1" />
-                        Download File Mentah
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 border-border/60 hover:bg-muted"
+                        title="Buka URL di tab baru"
+                        onClick={() => window.open(getScriptUrl(script.name), '_blank')}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
                     </div>
 
+                    {/* Action Copy Buttons Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8 gap-1.5 border-border/60 hover:bg-primary/10 hover:border-primary/40"
+                        title="Salin loadstring standar untuk executor"
+                        onClick={() => copyLoadstring(script.name)}
+                      >
+                        <Copy className="w-3.5 h-3.5 text-primary" />
+                        <span>Loadstring</span>
+                      </Button>
 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8 gap-1.5 border-border/60 hover:bg-primary/10 hover:border-primary/40"
+                        title="Salin kode integrasi lengkap (Key System + Whitelist)"
+                        onClick={() => copyIntegratedCode(script)}
+                      >
+                        <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Kode Integrasi</span>
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8 gap-1.5 border-border/60 hover:bg-muted"
+                        title="Salin isi script mentah (tanpa wrapper)"
+                        onClick={() => copyRawScript(script)}
+                      >
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>Salin Mentah</span>
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8 gap-1.5 border-border/60 hover:bg-muted"
+                        title="Timpa isi script dari clipboard"
+                        onClick={() => pasteIntoScript(script)}
+                      >
+                        <ClipboardPaste className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Paste Clipboard</span>
+                      </Button>
+                    </div>
+
+                    {/* Full Obfuscated Loadstring & Raw Download */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs h-8 border-cyan-500/40 text-cyan-300 bg-cyan-500/5 hover:bg-cyan-500/15 gap-1.5 font-medium"
+                        title="Salin loadstring ter-obfusikasi penuh (URL disembunyikan)"
+                        onClick={() => copyObfuscatedLoadstring(script.name)}
+                      >
+                        <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                        Loadstring Obfuscate Full
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs h-8 border-border/60 hover:bg-muted gap-1.5"
+                        title="Unduh file script mentah ke komputer (.lua)"
+                        onClick={() => downloadRawFile(script)}
+                      >
+                        <Download className="w-3.5 h-3.5 text-emerald-400" />
+                        Download File Mentah
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <Card className="glass-card">
-        <CardHeader className="pb-3 px-3 sm:px-6">
-          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-            <Shield className="w-4 h-4 text-yellow-500" />
-            Fake Script API
+      {/* Fake Script API Card */}
+      <Card className="glass-card border-border/60 shadow-md overflow-hidden">
+        <CardHeader className="pb-3 px-4 sm:px-6 border-b border-border/30 bg-black/20">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Shield className="w-4 h-4 text-amber-400" />
+            Fake Script Fallback Endpoint
           </CardTitle>
-          <CardDescription className="text-xs">Endpoint fake source untuk user gagal autentikasi</CardDescription>
+          <CardDescription className="text-xs">
+            Endpoint lua script palsu/dummy yang akan dikembalikan jika pengguna gagal melewati autentikasi Key System atau Whitelist.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="px-3 sm:px-6 space-y-2">
-          <div className="flex gap-1.5">
-            <Input readOnly value={getFakeUrl()} className="font-mono text-xs bg-black/30" />
-            <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(getFakeUrl()); toast({ title: 'Copied!' }); }}>
-              <Copy className="w-3 h-3" />
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex items-center gap-2">
+            <Input readOnly value={getFakeUrl()} className="font-mono text-xs h-9 bg-black/40 border-border/50 text-amber-200 select-all" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 text-xs gap-1.5 border-amber-500/30 text-amber-300 hover:bg-amber-500/10"
+              onClick={() => { navigator.clipboard.writeText(getFakeUrl()); toast({ title: 'Copied!', description: 'Fake script API disalin' }); }}
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Salin</span>
             </Button>
           </div>
         </CardContent>
