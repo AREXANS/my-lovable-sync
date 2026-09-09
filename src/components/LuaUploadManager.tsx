@@ -653,10 +653,11 @@ const LuaUploadManager: FC = () => {
         toast({ title: 'Clipboard kosong', variant: 'destructive' });
         return;
       }
-      const rawName = prompt('Nama file script (contoh: myscript.lua):', 'pasted_script.lua');
-      if (rawName === null) return;
-      const fileName = (rawName.trim() || 'pasted_script.lua').replace(/\s+/g, '_');
-      const displayName = /\.(lua|txt)$/i.test(fileName) ? fileName : `${fileName}.lua`;
+      const typed = uploadDisplayName.trim();
+      const displayName = typed || (prompt('Nama script:', 'Script Baru') || '').trim();
+      if (!displayName) return;
+      const desc = uploadDescription.trim() || `Script Premium Arexans ${displayName}`;
+      const category = resolveUploadCategory();
       const scriptName = displayName.replace(/\.(lua|txt)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
       setUploading(true);
@@ -667,20 +668,23 @@ const LuaUploadManager: FC = () => {
       if (existing) {
         if (!confirm(`Script "${displayName}" sudah ada. Timpa dengan isi clipboard?`)) { setUploading(false); return; }
         const { error } = await supabase.from('lua_scripts')
-          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
+          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, display_name: displayName, description: desc, category, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
         if (error) throw error;
         toast({ title: 'Berhasil', description: `"${displayName}" diupdate dari clipboard${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       } else {
         const { error } = await supabase.from('lua_scripts').insert({
           name: dbName, display_name: displayName,
-          description: `Auto-integrated: key system (from clipboard)${wasObfuscated ? ' + obfuscated' : ''}`,
+          description: desc, category,
           content: p.content, raw_content: p.raw_content, plain_content: p.plain_content,
           obfuscate_enabled: enabled, script_type: 'uploaded', is_active: true,
         } as any);
         if (error) throw error;
-        toast({ title: 'Berhasil', description: `"${displayName}" diupload dari clipboard${wasObfuscated ? ' + auto-obfuscated' : ''}` });
+        toast({ title: 'Berhasil', description: `"${displayName}" diupload ke kategori ${category}${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       }
 
+      setUploadDisplayName('');
+      setUploadDescription('');
+      setNewCategoryName('');
       fetchScripts();
     } catch {
       toast({ title: 'Error', description: 'Gagal paste dari clipboard', variant: 'destructive' });
