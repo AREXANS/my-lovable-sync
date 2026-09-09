@@ -589,6 +589,49 @@ const ScriptManagement: FC = () => {
     }
   };
 
+  const getGameManifestUrl = () =>
+    `${getApiBase()}/get-script?name=gametab&manifest=1`;
+
+  const loadGameTabManifest = async () => {
+    setGameTabLoading(true);
+    try {
+      const res = await fetch(`${getGameManifestUrl()}&format=json`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Gagal memuat manifest');
+      setGameTabScripts(json.scripts || []);
+      toast({ title: 'Manifest dimuat', description: `${json.count} script (Crack/Random/Game) siap dipakai Game Tab` });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : 'Gagal memuat manifest', variant: 'destructive' });
+    } finally {
+      setGameTabLoading(false);
+    }
+  };
+
+  const copyGameTabSnippet = () => {
+    const url = getGameManifestUrl();
+    const snippet = `-- Arexans Game Tab (auto dari Upload Lua Script: Crack / Random / Game)
+local GameScripts = (function()
+    local ok, res = pcall(function() return game:HttpGet("${url}") end)
+    if not ok or type(res) ~= "string" then return {} end
+    local fn = (loadstring or load)(res)
+    if type(fn) ~= "function" then return {} end
+    local ok2, list = pcall(fn)
+    if not ok2 or type(list) ~= "table" then return {} end
+    return list
+end)()
+
+for _, s in ipairs(GameScripts) do
+    -- {name = s.name, desc = s.desc, callback = s.callback}
+    GameTab:AddButton({
+        Title = s.name,
+        Description = s.desc,
+        Callback = function() pcall(s.callback) end,
+    })
+end`;
+    navigator.clipboard.writeText(snippet);
+    toast({ title: 'Copied!', description: 'Kode Game Tab untuk Main Script disalin' });
+  };
+
   const slotSuffix = (id: string) => (getSlot(id) === 'backup' ? '&slot=backup' : '');
 
   const getScriptUrl = (script: LuaScript) => {
