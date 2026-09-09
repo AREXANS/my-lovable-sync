@@ -1030,6 +1030,65 @@ const ScriptManagement: FC = () => {
                     </pre>
                   </div>
                 )}
+
+                {/* Game Tab: terhubung ke Upload Lua Script kategori Crack / Random / Game */}
+                {script.name === 'game' && (
+                  <div className="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h4 className="text-xs sm:text-sm font-semibold text-emerald-400 flex items-center gap-2">
+                        <Database className="w-4 h-4" /> Game Tab — Sumber: Upload Lua Script
+                      </h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={loadGameTabManifest}
+                        disabled={gameTabLoading}
+                        className="text-xs border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+                      >
+                        {gameTabLoading ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                        Refresh Manifest
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Tab Game di Main Script tidak lagi memanggil <code className="font-mono">get-script?name=game</code>.
+                      Semua script pada kategori <b>Crack</b>, <b>Random</b>, dan <b>Game</b> di Upload Lua Script otomatis
+                      dimanifikasi jadi satu baris kode rapi dan dieksekusi langsung dari <code className="font-mono">callback</code> —
+                      tanpa link/loadstring per script.
+                    </p>
+                    <code className="block text-[10px] sm:text-xs font-mono text-emerald-300 break-all">
+                      {getGameManifestUrl()}
+                    </code>
+                    {gameTabScripts.length > 0 && (
+                      <div className="max-h-40 overflow-auto rounded bg-black/30 p-2 space-y-1">
+                        {gameTabScripts.map((s) => (
+                          <div key={s.id} className="text-[11px] font-mono text-muted-foreground break-all">
+                            <span className="text-emerald-400">[{s.category}]</span> {'{name = "'}{s.name}{'" , desc = "'}{s.desc}{'" , callback = function() ... end}'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyGameTabSnippet}
+                        className="text-xs border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+                      >
+                        <Copy className="w-3 h-3 mr-1" /> Copy Kode Game Tab (Main Script)
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { navigator.clipboard.writeText(getGameManifestUrl()); toast({ title: 'Copied!', description: 'URL manifest Game Tab disalin' }); }}
+                        className="text-xs"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" /> Copy URL Manifest
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+
                 
                 {/* Whitelist Protection Option for Main Script */}
                 {script.script_type === 'main' && (
