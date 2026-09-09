@@ -452,10 +452,10 @@ const LuaUploadManager: FC = () => {
   const toggleArchive = (s: UploadedScript) =>
     patchScript(s, { archived: !s.archived }, s.archived ? 'Dikembalikan dari arsip' : 'Script diarsipkan');
 
-  const changeCategory = (s: UploadedScript) => {
-    const next = prompt('Kategori script:', catOf(s));
-    if (next === null) return;
-    patchScript(s, { category: next.trim() || 'umum' }, `Kategori: ${next.trim() || 'umum'}`);
+  const setCategory = (s: UploadedScript, next: string) => {
+    const value = next.trim() || 'umum';
+    if (value === catOf(s)) return;
+    patchScript(s, { category: value }, `Kategori: ${value}`);
   };
 
 
