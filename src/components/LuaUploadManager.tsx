@@ -399,9 +399,16 @@ const LuaUploadManager: FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryQuery, setCategoryQuery] = useState('');
   const [tab, setTab] = useState<'semua' | 'sematkan' | 'arsip'>('semua');
+  const [uploadCategory, setUploadCategory] = useState<string>('umum');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCatForId, setNewCatForId] = useState<string | null>(null);
+  const [newCatValue, setNewCatValue] = useState('');
 
   const catOf = (s: UploadedScript) => (s.category || 'umum').trim() || 'umum';
   const categories = Array.from(new Set(scripts.map(catOf))).sort();
+  const allCategories = Array.from(new Set(['umum', ...categories]));
+  const resolveUploadCategory = () =>
+    uploadCategory === '__new__' ? (newCategoryName.trim() || 'umum') : uploadCategory;
 
   const q = searchQuery.trim().toLowerCase();
   const cq = categoryQuery.trim().toLowerCase();
