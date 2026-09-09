@@ -403,6 +403,8 @@ const LuaUploadManager: FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCatForId, setNewCatForId] = useState<string | null>(null);
   const [newCatValue, setNewCatValue] = useState('');
+  const [uploadDisplayName, setUploadDisplayName] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
 
   const catOf = (s: UploadedScript) => (s.category || 'umum').trim() || 'umum';
   const categories = Array.from(new Set(scripts.map(catOf))).sort();
@@ -450,10 +452,10 @@ const LuaUploadManager: FC = () => {
   const toggleArchive = (s: UploadedScript) =>
     patchScript(s, { archived: !s.archived }, s.archived ? 'Dikembalikan dari arsip' : 'Script diarsipkan');
 
-  const changeCategory = (s: UploadedScript) => {
-    const next = prompt('Kategori script:', catOf(s));
-    if (next === null) return;
-    patchScript(s, { category: next.trim() || 'umum' }, `Kategori: ${next.trim() || 'umum'}`);
+  const setCategory = (s: UploadedScript, next: string) => {
+    const value = next.trim() || 'umum';
+    if (value === catOf(s)) return;
+    patchScript(s, { category: value }, `Kategori: ${value}`);
   };
 
 
@@ -604,7 +606,11 @@ const LuaUploadManager: FC = () => {
     setUploading(true);
     try {
       const rawOriginal = await file.text();
-      const scriptName = file.name.replace(/\.(lua|txt)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+      const fileBase = file.name.replace(/\.(lua|txt)$/i, '');
+      const title = uploadDisplayName.trim() || fileBase;
+      const desc = uploadDescription.trim() || `Script Premium Arexans ${title}`;
+      const category = resolveUploadCategory();
+      const scriptName = title.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
 
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
@@ -614,20 +620,23 @@ const LuaUploadManager: FC = () => {
 
       if (existing) {
         const { error } = await supabase.from('lua_scripts')
-          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
+          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, display_name: title, description: desc, category, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
         if (error) throw error;
-        toast({ title: 'Berhasil', description: `"${file.name}" diupdate${wasObfuscated ? ' + auto-obfuscated' : ''}` });
+        toast({ title: 'Berhasil', description: `"${title}" diupdate${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       } else {
         const { error } = await supabase.from('lua_scripts').insert({
-          name: dbName, display_name: file.name,
-          description: `Auto-integrated: key system${wasObfuscated ? ' + obfuscated' : ''}`,
+          name: dbName, display_name: title,
+          description: desc, category,
           content: p.content, raw_content: p.raw_content, plain_content: p.plain_content,
           obfuscate_enabled: enabled, script_type: 'uploaded', is_active: true,
         } as any);
         if (error) throw error;
-        toast({ title: 'Berhasil', description: `"${file.name}" diupload${wasObfuscated ? ' + auto-obfuscated' : ''}` });
+        toast({ title: 'Berhasil', description: `"${title}" diupload ke kategori ${category}${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       }
 
+      setUploadDisplayName('');
+      setUploadDescription('');
+      setNewCategoryName('');
       fetchScripts();
     } catch (e) {
       toast({ title: 'Error', description: 'Gagal upload', variant: 'destructive' });
@@ -644,10 +653,11 @@ const LuaUploadManager: FC = () => {
         toast({ title: 'Clipboard kosong', variant: 'destructive' });
         return;
       }
-      const rawName = prompt('Nama file script (contoh: myscript.lua):', 'pasted_script.lua');
-      if (rawName === null) return;
-      const fileName = (rawName.trim() || 'pasted_script.lua').replace(/\s+/g, '_');
-      const displayName = /\.(lua|txt)$/i.test(fileName) ? fileName : `${fileName}.lua`;
+      const typed = uploadDisplayName.trim();
+      const displayName = typed || (prompt('Nama script:', 'Script Baru') || '').trim();
+      if (!displayName) return;
+      const desc = uploadDescription.trim() || `Script Premium Arexans ${displayName}`;
+      const category = resolveUploadCategory();
       const scriptName = displayName.replace(/\.(lua|txt)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
       setUploading(true);
@@ -658,20 +668,23 @@ const LuaUploadManager: FC = () => {
       if (existing) {
         if (!confirm(`Script "${displayName}" sudah ada. Timpa dengan isi clipboard?`)) { setUploading(false); return; }
         const { error } = await supabase.from('lua_scripts')
-          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
+          .update({ content: p.content, raw_content: p.raw_content, plain_content: p.plain_content, obfuscate_enabled: enabled, display_name: displayName, description: desc, category, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
         if (error) throw error;
         toast({ title: 'Berhasil', description: `"${displayName}" diupdate dari clipboard${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       } else {
         const { error } = await supabase.from('lua_scripts').insert({
           name: dbName, display_name: displayName,
-          description: `Auto-integrated: key system (from clipboard)${wasObfuscated ? ' + obfuscated' : ''}`,
+          description: desc, category,
           content: p.content, raw_content: p.raw_content, plain_content: p.plain_content,
           obfuscate_enabled: enabled, script_type: 'uploaded', is_active: true,
         } as any);
         if (error) throw error;
-        toast({ title: 'Berhasil', description: `"${displayName}" diupload dari clipboard${wasObfuscated ? ' + auto-obfuscated' : ''}` });
+        toast({ title: 'Berhasil', description: `"${displayName}" diupload ke kategori ${category}${wasObfuscated ? ' + auto-obfuscated' : ''}` });
       }
 
+      setUploadDisplayName('');
+      setUploadDescription('');
+      setNewCategoryName('');
       fetchScripts();
     } catch {
       toast({ title: 'Error', description: 'Gagal paste dari clipboard', variant: 'destructive' });
@@ -980,6 +993,42 @@ const LuaUploadManager: FC = () => {
       <Card className="glass-card">
         <CardContent className="p-4 sm:p-6">
           <input type="file" accept=".lua,.txt" ref={fileInputRef} onChange={handleUpload} className="hidden" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+            <Input
+              value={uploadDisplayName}
+              onChange={(e) => setUploadDisplayName(e.target.value)}
+              placeholder="Nama script (contoh: Violence District V1)"
+              className="h-9 text-xs bg-black/20"
+            />
+            <div className="flex gap-2">
+              <select
+                value={uploadCategory}
+                onChange={(e) => setUploadCategory(e.target.value)}
+                className="h-9 flex-1 rounded-md border border-border bg-black/20 px-2 text-xs"
+              >
+                {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="__new__">+ Kategori baru…</option>
+              </select>
+              {uploadCategory === '__new__' && (
+                <Input
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="nama kategori"
+                  className="h-9 text-xs bg-black/20 flex-1"
+                />
+              )}
+            </div>
+            <Input
+              value={uploadDescription}
+              onChange={(e) => setUploadDescription(e.target.value)}
+              placeholder="Deskripsi script (opsional)"
+              className="h-9 text-xs bg-black/20 sm:col-span-2"
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Kosongkan nama → dipakai nama file (tanpa .lua). Kosongkan deskripsi → otomatis "Script Premium Arexans &lt;nama&gt;".
+          </p>
           <div
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-primary/30 rounded-xl p-6 sm:p-8 text-center cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all"
@@ -1117,14 +1166,48 @@ const LuaUploadManager: FC = () => {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {script.pinned && <Pin className="w-3 h-3 text-primary flex-shrink-0" />}
                           <p className="font-medium text-sm truncate">{script.display_name}</p>
-                          <button
-                            type="button"
-                            onClick={() => changeCategory(script)}
-                            title="Ubah kategori"
-                            className="text-[10px] px-1.5 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20"
-                          >
-                            <Tag className="w-2.5 h-2.5 mr-0.5 inline" />{catOf(script)}
-                          </button>
+                          <span className="inline-flex items-center gap-1">
+                            <Tag className="w-2.5 h-2.5 text-cyan-300" />
+                            <select
+                              value={newCatForId === script.id ? '__new__' : catOf(script)}
+                              onChange={(e) => {
+                                if (e.target.value === '__new__') {
+                                  setNewCatForId(script.id);
+                                  setNewCatValue('');
+                                } else {
+                                  setNewCatForId(null);
+                                  setCategory(script, e.target.value);
+                                }
+                              }}
+                              title="Ubah kategori"
+                              className="text-[10px] rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-1.5 py-0.5"
+                            >
+                              {Array.from(new Set([...allCategories, catOf(script)])).map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                              <option value="__new__">+ Baru…</option>
+                            </select>
+                            {newCatForId === script.id && (
+                              <Input
+                                autoFocus
+                                value={newCatValue}
+                                onChange={(e) => setNewCatValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && newCatValue.trim()) {
+                                    setCategory(script, newCatValue);
+                                    setNewCatForId(null);
+                                  }
+                                  if (e.key === 'Escape') setNewCatForId(null);
+                                }}
+                                onBlur={() => {
+                                  if (newCatValue.trim()) setCategory(script, newCatValue);
+                                  setNewCatForId(null);
+                                }}
+                                placeholder="kategori baru"
+                                className="h-6 w-28 text-[10px] bg-black/20"
+                              />
+                            )}
+                          </span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                             <Shield className="w-2.5 h-2.5 mr-0.5" />KeySystem
                           </Badge>
@@ -1146,6 +1229,9 @@ const LuaUploadManager: FC = () => {
                             Obf {isObfOn(script) ? 'ON' : 'OFF'}
                           </button>
                         </div>
+                        {script.description && (
+                          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{script.description}</p>
+                        )}
                         <p className="text-[10px] text-muted-foreground mt-1">{new Date(script.updated_at).toLocaleString('id-ID')}</p>
                       </div>
 

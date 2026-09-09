@@ -610,9 +610,13 @@ const ScriptManagement: FC = () => {
     }
   };
 
-  const copyGameTabSnippet = () => {
+  const GAME_TAB_BEGIN = '-- >>> AREXANS GAME TAB AUTO BEGIN (jangan diedit manual)';
+  const GAME_TAB_END = '-- <<< AREXANS GAME TAB AUTO END';
+
+  const buildGameTabSnippet = () => {
     const url = getGameManifestUrl();
-    const snippet = `-- Arexans Game Tab (auto dari Upload Lua Script: Crack / Random / Game)
+    return `${GAME_TAB_BEGIN}
+-- Arexans Game Tab (auto dari Upload Lua Script: Crack / Random / Game)
 local GameScripts = (function()
     local ok, res = pcall(function() return game:HttpGet("${url}") end)
     if not ok or type(res) ~= "string" then return {} end
@@ -630,9 +634,50 @@ for _, s in ipairs(GameScripts) do
         Description = s.desc,
         Callback = function() pcall(s.callback) end,
     })
-end`;
-    navigator.clipboard.writeText(snippet);
+end
+${GAME_TAB_END}`;
+  };
+
+  const copyGameTabSnippet = () => {
+    navigator.clipboard.writeText(buildGameTabSnippet());
     toast({ title: 'Copied!', description: 'Kode Game Tab untuk Main Script disalin' });
+  };
+
+  /** Tempel/segarkan blok Game Tab langsung ke Main Script tanpa copy-paste manual. */
+  const integrateGameTabToMain = async () => {
+    const main = scripts.find((s) => s.script_type === 'main') || scripts.find((s) => s.name === 'main');
+    if (!main) {
+      toast({ title: 'Main Script tidak ditemukan', description: 'Buat script bertipe Main dulu.', variant: 'destructive' });
+      return;
+    }
+    setSaving(main.id);
+    try {
+      const current = editedContent[main.id] ?? main.content ?? '';
+      const snippet = buildGameTabSnippet();
+      const begin = current.indexOf(GAME_TAB_BEGIN);
+      const end = current.indexOf(GAME_TAB_END);
+      const next =
+        begin !== -1 && end !== -1 && end > begin
+          ? current.slice(0, begin) + snippet + current.slice(end + GAME_TAB_END.length)
+          : `${current.replace(/\s+$/, '')}\n\n${snippet}\n`;
+
+      const { error } = await supabase
+        .from('lua_scripts')
+        .update({ content: next, updated_at: new Date().toISOString() } as any)
+        .eq('id', main.id);
+      if (error) throw error;
+
+      setEditedContent((prev) => ({ ...prev, [main.id]: next }));
+      toast({
+        title: 'Terintegrasi',
+        description: `Blok Game Tab ${begin !== -1 ? 'diperbarui' : 'ditambahkan'} di "${main.display_name}"`,
+      });
+      fetchScripts();
+    } catch {
+      toast({ title: 'Error', description: 'Gagal integrasi ke Main Script', variant: 'destructive' });
+    } finally {
+      setSaving(null);
+    }
   };
 
   const slotSuffix = (id: string) => (getSlot(id) === 'backup' ? '&slot=backup' : '');
@@ -1113,7 +1158,16 @@ end`;
                         ))}
                       </div>
                     )}
+                    <Button
+                      size="sm"
+                      onClick={integrateGameTabToMain}
+                      disabled={saving !== null}
+                      className="w-full text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
+                    >
+                      <Database className="w-3 h-3 mr-1" /> Integrasikan ke Main Script (otomatis)
+                    </Button>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
                       <Button
                         variant="outline"
                         size="sm"
