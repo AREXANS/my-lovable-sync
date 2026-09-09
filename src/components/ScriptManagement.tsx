@@ -153,6 +153,8 @@ const ScriptManagement: FC = () => {
   const [editedContent, setEditedContent] = useState<Record<string, string>>({});
   const [backupEdited, setBackupEdited] = useState<Record<string, string>>({});
   const [activeSlot, setActiveSlot] = useState<Record<string, 'primary' | 'backup'>>({});
+  const [gameTabScripts, setGameTabScripts] = useState<Array<{ id: string; name: string; desc: string; category: string }>>([]);
+  const [gameTabLoading, setGameTabLoading] = useState(false);
   const [showPreview, setShowPreview] = useState<Record<string, boolean>>({});
   const [enableWhitelistWrap, setEnableWhitelistWrap] = useState<Record<string, boolean>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -226,6 +228,7 @@ const ScriptManagement: FC = () => {
   useEffect(() => {
     fetchScripts();
     fetchRecordings();
+    loadGameTabManifest();
 
     const channel = supabase
       .channel('lua-recording-events')
@@ -587,6 +590,49 @@ const ScriptManagement: FC = () => {
     } catch {
       toast({ title: 'Error', description: 'Gagal mengubah status obfuscate', variant: 'destructive' });
     }
+  };
+
+  const getGameManifestUrl = () =>
+    `${getApiBase()}/get-script?name=gametab&manifest=1`;
+
+  const loadGameTabManifest = async () => {
+    setGameTabLoading(true);
+    try {
+      const res = await fetch(`${getGameManifestUrl()}&format=json`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Gagal memuat manifest');
+      setGameTabScripts(json.scripts || []);
+      toast({ title: 'Manifest dimuat', description: `${json.count} script (Crack/Random/Game) siap dipakai Game Tab` });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : 'Gagal memuat manifest', variant: 'destructive' });
+    } finally {
+      setGameTabLoading(false);
+    }
+  };
+
+  const copyGameTabSnippet = () => {
+    const url = getGameManifestUrl();
+    const snippet = `-- Arexans Game Tab (auto dari Upload Lua Script: Crack / Random / Game)
+local GameScripts = (function()
+    local ok, res = pcall(function() return game:HttpGet("${url}") end)
+    if not ok or type(res) ~= "string" then return {} end
+    local fn = (loadstring or load)(res)
+    if type(fn) ~= "function" then return {} end
+    local ok2, list = pcall(fn)
+    if not ok2 or type(list) ~= "table" then return {} end
+    return list
+end)()
+
+for _, s in ipairs(GameScripts) do
+    -- {name = s.name, desc = s.desc, callback = s.callback}
+    GameTab:AddButton({
+        Title = s.name,
+        Description = s.desc,
+        Callback = function() pcall(s.callback) end,
+    })
+end`;
+    navigator.clipboard.writeText(snippet);
+    toast({ title: 'Copied!', description: 'Kode Game Tab untuk Main Script disalin' });
   };
 
   const slotSuffix = (id: string) => (getSlot(id) === 'backup' ? '&slot=backup' : '');
@@ -1030,6 +1076,65 @@ const ScriptManagement: FC = () => {
                     </pre>
                   </div>
                 )}
+
+                {/* Game Tab: terhubung ke Upload Lua Script kategori Crack / Random / Game */}
+                {script.name === 'game' && (
+                  <div className="p-3 rounded bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h4 className="text-xs sm:text-sm font-semibold text-emerald-400 flex items-center gap-2">
+                        <Database className="w-4 h-4" /> Game Tab — Sumber: Upload Lua Script
+                      </h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={loadGameTabManifest}
+                        disabled={gameTabLoading}
+                        className="text-xs border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+                      >
+                        {gameTabLoading ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                        Refresh Manifest
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Tab Game di Main Script tidak lagi memanggil <code className="font-mono">get-script?name=game</code>.
+                      Semua script pada kategori <b>Crack</b>, <b>Random</b>, dan <b>Game</b> di Upload Lua Script otomatis
+                      dimanifikasi jadi satu baris kode rapi dan dieksekusi langsung dari <code className="font-mono">callback</code> —
+                      tanpa link/loadstring per script.
+                    </p>
+                    <code className="block text-[10px] sm:text-xs font-mono text-emerald-300 break-all">
+                      {getGameManifestUrl()}
+                    </code>
+                    {gameTabScripts.length > 0 && (
+                      <div className="max-h-40 overflow-auto rounded bg-black/30 p-2 space-y-1">
+                        {gameTabScripts.map((s) => (
+                          <div key={s.id} className="text-[11px] font-mono text-muted-foreground break-all">
+                            <span className="text-emerald-400">[{s.category}]</span> {'{name = "'}{s.name}{'" , desc = "'}{s.desc}{'" , callback = function() ... end}'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyGameTabSnippet}
+                        className="text-xs border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+                      >
+                        <Copy className="w-3 h-3 mr-1" /> Copy Kode Game Tab (Main Script)
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { navigator.clipboard.writeText(getGameManifestUrl()); toast({ title: 'Copied!', description: 'URL manifest Game Tab disalin' }); }}
+                        className="text-xs"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" /> Copy URL Manifest
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+
                 
                 {/* Whitelist Protection Option for Main Script */}
                 {script.script_type === 'main' && (
@@ -1170,7 +1275,7 @@ const ScriptManagement: FC = () => {
             <div className="p-2 sm:p-3 rounded bg-muted/30">
               <h4 className="font-semibold text-emerald-400 mb-1 sm:mb-2 text-xs sm:text-sm">4. Game Script</h4>
               <p className="text-muted-foreground text-xs">
-                Endpoint: <code className="font-mono">/get-script?name=game</code>. Script khusus per-game/map (fitur spesifik game).
+                Endpoint: <code className="font-mono">/get-script?name=gametab&amp;manifest=1</code>. Otomatis berisi semua script Upload Lua Script kategori <b>Crack</b>, <b>Random</b>, dan <b>Game</b> (sudah diminify jadi 1 baris, callback langsung).
               </p>
             </div>
           </div>
