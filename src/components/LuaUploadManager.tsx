@@ -403,6 +403,8 @@ const LuaUploadManager: FC = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCatForId, setNewCatForId] = useState<string | null>(null);
   const [newCatValue, setNewCatValue] = useState('');
+  const [uploadDisplayName, setUploadDisplayName] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
 
   const catOf = (s: UploadedScript) => (s.category || 'umum').trim() || 'umum';
   const categories = Array.from(new Set(scripts.map(catOf))).sort();
