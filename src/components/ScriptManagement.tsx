@@ -1274,7 +1274,7 @@ end`;
             <div className="p-2 sm:p-3 rounded bg-muted/30">
               <h4 className="font-semibold text-emerald-400 mb-1 sm:mb-2 text-xs sm:text-sm">4. Game Script</h4>
               <p className="text-muted-foreground text-xs">
-                Endpoint: <code className="font-mono">/get-script?name=game</code>. Script khusus per-game/map (fitur spesifik game).
+                Endpoint: <code className="font-mono">/get-script?name=gametab&amp;manifest=1</code>. Otomatis berisi semua script Upload Lua Script kategori <b>Crack</b>, <b>Random</b>, dan <b>Game</b> (sudah diminify jadi 1 baris, callback langsung).
               </p>
             </div>
           </div>
