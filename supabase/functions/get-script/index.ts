@@ -45,6 +45,130 @@ function isBrowser(req: Request): boolean {
   return isNavigation || hasBrowserHints || acceptsHtml;
 }
 
+// ===== Game Tab Manifest (kategori upload: crack / random / game) =====
+const GAME_TAB_CATEGORIES = ["crack", "random", "game"];
+
+/** Minify Lua: buang komentar & rapatkan jadi satu baris. Aman untuk string & komentar panjang. */
+function minifyLua(src: string): string {
+  let out = "";
+  let i = 0;
+  const n = src.length;
+
+  const readLongBracket = (start: number): { text: string; end: number } | null => {
+    if (src[start] !== "[") return null;
+    let j = start + 1;
+    let eq = 0;
+    while (src[j] === "=") { eq++; j++; }
+    if (src[j] !== "[") return null;
+    const close = "]" + "=".repeat(eq) + "]";
+    const endIdx = src.indexOf(close, j + 1);
+    const end = endIdx === -1 ? n : endIdx + close.length;
+    return { text: src.slice(start, end), end };
+  };
+
+  while (i < n) {
+    const c = src[i]!;
+
+    if (c === "-" && src[i + 1] === "-") {
+      const lb = readLongBracket(i + 2);
+      if (lb) { i = lb.end; out += " "; continue; }
+      while (i < n && src[i] !== "\n") i++;
+      out += " ";
+      continue;
+    }
+
+    if (c === "[") {
+      const lb = readLongBracket(i);
+      if (lb) { out += lb.text; i = lb.end; continue; }
+    }
+
+    if (c === '"' || c === "'") {
+      let j = i + 1;
+      while (j < n) {
+        if (src[j] === "\\") { j += 2; continue; }
+        if (src[j] === c) { j++; break; }
+        j++;
+      }
+      out += src.slice(i, j);
+      i = j;
+      continue;
+    }
+
+    if (c === " " || c === "\t" || c === "\r" || c === "\n") {
+      if (!out.endsWith(" ")) out += " ";
+      i++;
+      continue;
+    }
+
+    out += c;
+    i++;
+  }
+
+  return out.replace(/\s+/g, " ").trim();
+}
+
+function luaStr(v: string): string {
+  return '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r/g, "").replace(/\n/g, "\\n") + '"';
+}
+
+async function buildGameManifest(
+  supabase: ReturnType<typeof createClient>,
+  categoryFilter: string,
+  format: string,
+): Promise<Response> {
+  const { data, error } = await supabase
+    .from("lua_scripts")
+    .select("id, name, display_name, description, category, content, raw_content, plain_content, is_active, archived, updated_at")
+    .eq("is_active", true)
+    .limit(500);
+
+  if (error) throw error;
+
+  const wanted = categoryFilter ? [categoryFilter] : GAME_TAB_CATEGORIES;
+  const rows = ((data as any[]) ?? []).filter((r) => {
+    if (r.archived) return false;
+    const cat = String(r.category || "").toLowerCase().trim();
+    return wanted.includes(cat);
+  });
+
+  const entries = rows
+    .map((r) => {
+      const source: string = r.plain_content || r.raw_content || r.content || "";
+      return {
+        id: r.id,
+        name: r.display_name || r.name,
+        desc: r.description || `Script Premium Arexans ${r.display_name || r.name}`,
+        category: String(r.category || "").toLowerCase(),
+        code: minifyLua(source),
+      };
+    })
+    .filter((e) => e.code.length > 0);
+
+  if (format === "json") {
+    return new Response(JSON.stringify({ success: true, count: entries.length, scripts: entries }), {
+      status: 200,
+      headers: { ...corsHeaders, ...noCacheHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const body = entries
+    .map(
+      (e) =>
+        `{name=${luaStr(e.name)},desc=${luaStr(e.desc)},category=${luaStr(e.category)},callback=function() ${e.code} end}`,
+    )
+    .join(",\n");
+
+  const lua =
+    `-- Arexans Game Tab Manifest (auto-generated)\n` +
+    `-- Total: ${entries.length} script | kategori: ${wanted.join(", ")}\n` +
+    `return {\n${body}\n}\n`;
+
+  return new Response(lua, {
+    status: 200,
+    headers: { ...corsHeaders, ...noCacheHeaders, "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: { ...corsHeaders, ...noCacheHeaders } });
