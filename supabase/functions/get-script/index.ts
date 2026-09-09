@@ -183,6 +183,16 @@ serve(async (req) => {
     const wantPayload = payloadParam === "1" || payloadParam === "true";
     const slotParam = (url.searchParams.get("slot") || "primary").toLowerCase();
     const useBackup = slotParam === "backup";
+    const manifestParam = (url.searchParams.get("manifest") || "").toLowerCase();
+    const wantManifest =
+      manifestParam === "1" || manifestParam === "true" || (scriptName || "").toLowerCase() === "gametab";
+    const formatParam = (url.searchParams.get("format") || "lua").toLowerCase();
+    const categoryFilter = (url.searchParams.get("category") || "").toLowerCase().trim();
+
+    if (wantManifest) {
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      return await buildGameManifest(sb, categoryFilter, formatParam);
+    }
 
     if (!scriptName) {
       return new Response("-- Access Denied: Invalid request", {
@@ -190,6 +200,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, ...noCacheHeaders, "Content-Type": "text/plain; charset=utf-8" },
       });
     }
+
 
     if (!forceRaw && !wantPayload && isBrowser(req)) {
       const deniedUrl = `https://tools.arexans.my.id/access-denied?name=${encodeURIComponent(scriptName)}`;
