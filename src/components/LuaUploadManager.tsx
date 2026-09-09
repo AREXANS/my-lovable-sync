@@ -1166,14 +1166,48 @@ const LuaUploadManager: FC = () => {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {script.pinned && <Pin className="w-3 h-3 text-primary flex-shrink-0" />}
                           <p className="font-medium text-sm truncate">{script.display_name}</p>
-                          <button
-                            type="button"
-                            onClick={() => changeCategory(script)}
-                            title="Ubah kategori"
-                            className="text-[10px] px-1.5 py-0.5 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20"
-                          >
-                            <Tag className="w-2.5 h-2.5 mr-0.5 inline" />{catOf(script)}
-                          </button>
+                          <span className="inline-flex items-center gap-1">
+                            <Tag className="w-2.5 h-2.5 text-cyan-300" />
+                            <select
+                              value={newCatForId === script.id ? '__new__' : catOf(script)}
+                              onChange={(e) => {
+                                if (e.target.value === '__new__') {
+                                  setNewCatForId(script.id);
+                                  setNewCatValue('');
+                                } else {
+                                  setNewCatForId(null);
+                                  setCategory(script, e.target.value);
+                                }
+                              }}
+                              title="Ubah kategori"
+                              className="text-[10px] rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 px-1.5 py-0.5"
+                            >
+                              {Array.from(new Set([...allCategories, catOf(script)])).map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                              ))}
+                              <option value="__new__">+ Baru…</option>
+                            </select>
+                            {newCatForId === script.id && (
+                              <Input
+                                autoFocus
+                                value={newCatValue}
+                                onChange={(e) => setNewCatValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && newCatValue.trim()) {
+                                    setCategory(script, newCatValue);
+                                    setNewCatForId(null);
+                                  }
+                                  if (e.key === 'Escape') setNewCatForId(null);
+                                }}
+                                onBlur={() => {
+                                  if (newCatValue.trim()) setCategory(script, newCatValue);
+                                  setNewCatForId(null);
+                                }}
+                                placeholder="kategori baru"
+                                className="h-6 w-28 text-[10px] bg-black/20"
+                              />
+                            )}
+                          </span>
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                             <Shield className="w-2.5 h-2.5 mr-0.5" />KeySystem
                           </Badge>
@@ -1195,6 +1229,9 @@ const LuaUploadManager: FC = () => {
                             Obf {isObfOn(script) ? 'ON' : 'OFF'}
                           </button>
                         </div>
+                        {script.description && (
+                          <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{script.description}</p>
+                        )}
                         <p className="text-[10px] text-muted-foreground mt-1">{new Date(script.updated_at).toLocaleString('id-ID')}</p>
                       </div>
 
