@@ -228,6 +228,7 @@ const ScriptManagement: FC = () => {
   useEffect(() => {
     fetchScripts();
     fetchRecordings();
+    loadGameTabManifest();
 
     const channel = supabase
       .channel('lua-recording-events')
