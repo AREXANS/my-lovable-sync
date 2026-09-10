@@ -29,6 +29,7 @@ interface LuaScript {
   description: string | null;
   content: string;
   backup_content?: string | null;
+  plain_content?: string | null;
   obfuscate_enabled?: boolean;
   script_type: string;
   is_active: boolean;
@@ -246,7 +247,12 @@ const ScriptManagement: FC = () => {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => fetchRecordings(true), 15000);
+    // Refresh lebih jarang dan berhenti total saat tab tidak dilihat,
+    // supaya halaman tidak tersendat saat sedang mengetik kode.
+    const timer = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchRecordings(true);
+    }, 30000);
     return () => window.clearInterval(timer);
   }, [recordingKey]);
 
@@ -262,7 +268,8 @@ const ScriptManagement: FC = () => {
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.error || 'Gagal mengambil rekaman');
       const list: LuaRecording[] = json.recordings || [];
-      setRecordings(list);
+      // Jangan gambar ulang kalau datanya sama persis.
+      setRecordings((prev) => (JSON.stringify(prev) === JSON.stringify(list) ? prev : list));
       // Kick off game-name resolution for any new place IDs
       const uniqueIds = Array.from(new Set(list.map(r => r.game_id).filter((v): v is string => !!v && /^\d+$/.test(v))));
       uniqueIds.forEach(id => { const cur = gameNames[id]; if (!cur || cur === `Place ${id}`) resolveGameName(id); });
@@ -514,16 +521,19 @@ const ScriptManagement: FC = () => {
         contentToSave = wrapWithWhitelist(editedContent[script.id]);
       }
 
+      // Simpan selalu salinan kode terbaca supaya sakelar Obf bisa dimatikan kapan saja.
+      const plainSource = contentToSave || '';
+
       // Obfuscate hanya jika sakelar Obfuscate untuk script ini aktif
       const obfEnabled = script.obfuscate_enabled !== false;
       let wasObfuscated = false;
       if (obfEnabled) {
-        const obfuscated = await obfuscateSource(contentToSave || '');
-        wasObfuscated = obfuscated !== contentToSave;
+        const obfuscated = await obfuscateSource(plainSource);
+        wasObfuscated = obfuscated !== plainSource;
         contentToSave = obfuscated;
       }
 
-      const payload: any = { updated_at: new Date().toISOString() };
+      const payload: any = { updated_at: new Date().toISOString(), plain_content: plainSource };
       if (slot === 'primary') payload.content = contentToSave;
       else payload.backup_content = contentToSave;
 
@@ -574,17 +584,52 @@ const ScriptManagement: FC = () => {
     }
   };
 
+  /** Sakelar Obf: OFF langsung mengembalikan kode terbaca ke slot aktif,
+   *  ON meng-obfuscate salinan terbaca. Tidak pernah mengacak saat OFF. */
   const handleToggleObfuscate = async (script: LuaScript) => {
-    const next = script.obfuscate_enabled === false;
+    const next = script.obfuscate_enabled === false; // true = menyalakan
+    const slot = getSlot(script.id);
+    const stored = slot === 'backup' ? (script.backup_content || '') : (script.content || '');
+    const storedPlain = (script.plain_content || '').trim()
+      ? (script.plain_content as string)
+      : (script.obfuscate_enabled === false ? stored : '');
+
     try {
-      const { error } = await supabase
-        .from('lua_scripts')
-        .update({ obfuscate_enabled: next, updated_at: new Date().toISOString() } as any)
-        .eq('id', script.id);
+      const payload: any = { obfuscate_enabled: next, updated_at: new Date().toISOString() };
+
+      if (next) {
+        const base = storedPlain || stored;
+        if (base.trim()) {
+          payload.plain_content = base;
+          const obf = await obfuscateSource(base);
+          if (slot === 'backup') payload.backup_content = obf;
+          else payload.content = obf;
+        }
+      } else {
+        if (!storedPlain.trim()) {
+          toast({
+            title: 'Tidak bisa dimatikan',
+            description: `"${script.display_name}" belum menyimpan kode aslinya. Simpan sekali lagi kode terbaca, setelah itu sakelar Obf bisa dimatikan kapan saja.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (slot === 'backup') payload.backup_content = storedPlain;
+        else payload.content = storedPlain;
+      }
+
+      const { error } = await supabase.from('lua_scripts').update(payload).eq('id', script.id);
       if (error) throw error;
+
+      const applied = slot === 'backup' ? payload.backup_content : payload.content;
+      if (typeof applied === 'string') {
+        if (slot === 'backup') setBackupEdited((p) => ({ ...p, [script.id]: applied }));
+        else setEditedContent((p) => ({ ...p, [script.id]: applied }));
+      }
+
       toast({
         title: next ? 'Obfuscate ON' : 'Obfuscate OFF',
-        description: `"${script.display_name}" ${next ? 'akan di-obfuscate saat disimpan' : 'disimpan apa adanya (kode terbaca)'}`,
+        description: `"${script.display_name}" ${next ? 'di-obfuscate sekarang juga' : 'langsung dikembalikan ke kode terbaca'}`,
       });
       fetchScripts();
     } catch {
