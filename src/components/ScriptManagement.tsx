@@ -268,7 +268,8 @@ const ScriptManagement: FC = () => {
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.error || 'Gagal mengambil rekaman');
       const list: LuaRecording[] = json.recordings || [];
-      setRecordings(list);
+      // Jangan gambar ulang kalau datanya sama persis.
+      setRecordings((prev) => (JSON.stringify(prev) === JSON.stringify(list) ? prev : list));
       // Kick off game-name resolution for any new place IDs
       const uniqueIds = Array.from(new Set(list.map(r => r.game_id).filter((v): v is string => !!v && /^\d+$/.test(v))));
       uniqueIds.forEach(id => { const cur = gameNames[id]; if (!cur || cur === `Place ${id}`) resolveGameName(id); });
