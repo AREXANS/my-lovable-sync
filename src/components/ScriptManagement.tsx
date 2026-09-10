@@ -584,17 +584,52 @@ const ScriptManagement: FC = () => {
     }
   };
 
+  /** Sakelar Obf: OFF langsung mengembalikan kode terbaca ke slot aktif,
+   *  ON meng-obfuscate salinan terbaca. Tidak pernah mengacak saat OFF. */
   const handleToggleObfuscate = async (script: LuaScript) => {
-    const next = script.obfuscate_enabled === false;
+    const next = script.obfuscate_enabled === false; // true = menyalakan
+    const slot = getSlot(script.id);
+    const stored = slot === 'backup' ? (script.backup_content || '') : (script.content || '');
+    const storedPlain = (script.plain_content || '').trim()
+      ? (script.plain_content as string)
+      : (script.obfuscate_enabled === false ? stored : '');
+
     try {
-      const { error } = await supabase
-        .from('lua_scripts')
-        .update({ obfuscate_enabled: next, updated_at: new Date().toISOString() } as any)
-        .eq('id', script.id);
+      const payload: any = { obfuscate_enabled: next, updated_at: new Date().toISOString() };
+
+      if (next) {
+        const base = storedPlain || stored;
+        if (base.trim()) {
+          payload.plain_content = base;
+          const obf = await obfuscateSource(base);
+          if (slot === 'backup') payload.backup_content = obf;
+          else payload.content = obf;
+        }
+      } else {
+        if (!storedPlain.trim()) {
+          toast({
+            title: 'Tidak bisa dimatikan',
+            description: `"${script.display_name}" belum menyimpan kode aslinya. Simpan sekali lagi kode terbaca, setelah itu sakelar Obf bisa dimatikan kapan saja.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (slot === 'backup') payload.backup_content = storedPlain;
+        else payload.content = storedPlain;
+      }
+
+      const { error } = await supabase.from('lua_scripts').update(payload).eq('id', script.id);
       if (error) throw error;
+
+      const applied = slot === 'backup' ? payload.backup_content : payload.content;
+      if (typeof applied === 'string') {
+        if (slot === 'backup') setBackupEdited((p) => ({ ...p, [script.id]: applied }));
+        else setEditedContent((p) => ({ ...p, [script.id]: applied }));
+      }
+
       toast({
         title: next ? 'Obfuscate ON' : 'Obfuscate OFF',
-        description: `"${script.display_name}" ${next ? 'akan di-obfuscate saat disimpan' : 'disimpan apa adanya (kode terbaca)'}`,
+        description: `"${script.display_name}" ${next ? 'di-obfuscate sekarang juga' : 'langsung dikembalikan ke kode terbaca'}`,
       });
       fetchScripts();
     } catch {
