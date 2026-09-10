@@ -405,6 +405,7 @@ const LuaUploadManager: FC = () => {
   const [newCatValue, setNewCatValue] = useState('');
   const [uploadDisplayName, setUploadDisplayName] = useState('');
   const [uploadDescription, setUploadDescription] = useState('');
+  const [uploadObfuscate, setUploadObfuscate] = useState(true);
 
   const catOf = (s: UploadedScript) => (s.category || 'umum').trim() || 'umum';
   const categories = Array.from(new Set(scripts.map(catOf))).sort();
@@ -1025,6 +1026,25 @@ const LuaUploadManager: FC = () => {
               placeholder="Deskripsi script (opsional)"
               className="h-9 text-xs bg-black/20 sm:col-span-2"
             />
+          </div>
+          <div className="flex items-center justify-between gap-2 mb-2 rounded-md border border-border/60 bg-black/20 px-3 py-2">
+            <div className="text-xs">
+              <p className="font-medium">Obfuscate saat upload</p>
+              <p className="text-[10px] text-muted-foreground">
+                {uploadObfuscate ? 'Kode akan diacak otomatis setelah diupload.' : 'Kode diupload mentah tanpa diacak.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUploadObfuscate((v) => !v)}
+              className={`text-[10px] px-2 py-1 rounded-full border ${
+                uploadObfuscate
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
+                  : 'border-muted-foreground/30 bg-muted/20 text-muted-foreground'
+              }`}
+            >
+              Obf {uploadObfuscate ? 'ON' : 'OFF'}
+            </button>
           </div>
           <p className="text-[10px] text-muted-foreground mb-2">
             Kosongkan nama → dipakai nama file (tanpa .lua). Kosongkan deskripsi → otomatis "Script Premium Arexans &lt;nama&gt;".
