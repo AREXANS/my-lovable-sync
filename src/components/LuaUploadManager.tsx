@@ -1348,6 +1348,15 @@ const LuaUploadManager: FC = () => {
 
                   </div>
                 ))}
+                {filteredScripts.length > visibleCount && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setVisibleCount((n) => n + 30)}
+                  >
+                    Muat lebih banyak ({filteredScripts.length - visibleCount} lagi)
+                  </Button>
+                )}
               </div>
             </div>
           )}
