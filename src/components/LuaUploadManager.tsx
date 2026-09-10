@@ -432,6 +432,10 @@ const LuaUploadManager: FC = () => {
     )
     .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
 
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [tab, searchQuery, categoryQuery]);
+
   const counts = {
     semua: scripts.filter((s) => !s.archived).length,
     sematkan: scripts.filter((s) => !!s.pinned && !s.archived).length,
@@ -1171,7 +1175,7 @@ const LuaUploadManager: FC = () => {
           ) : (
             <div className="max-h-[75vh] overflow-y-auto pr-1">
               <div className="space-y-3">
-                {filteredScripts.map((script) => (
+                {filteredScripts.slice(0, visibleCount).map((script) => (
                   <div
                     key={script.id}
                     className={`p-3 rounded-lg border transition-colors space-y-2 ${
