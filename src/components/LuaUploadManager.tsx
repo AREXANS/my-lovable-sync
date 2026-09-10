@@ -615,7 +615,7 @@ const LuaUploadManager: FC = () => {
       const dbName = `uploaded_${scriptName}`;
 
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
-      const enabled = existing ? (existing as any).obfuscate_enabled !== false : true;
+      const enabled = uploadObfuscate;
       const p = await buildPayload(dbName, rawOriginal, enabled);
       const wasObfuscated = p.wasObfuscated;
 
@@ -663,7 +663,7 @@ const LuaUploadManager: FC = () => {
       const dbName = `uploaded_${scriptName}`;
       setUploading(true);
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
-      const enabled = existing ? (existing as any).obfuscate_enabled !== false : true;
+      const enabled = uploadObfuscate;
       const p = await buildPayload(dbName, text, enabled);
       const wasObfuscated = p.wasObfuscated;
       if (existing) {
