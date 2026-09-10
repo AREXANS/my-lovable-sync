@@ -247,7 +247,12 @@ const ScriptManagement: FC = () => {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => fetchRecordings(true), 15000);
+    // Refresh lebih jarang dan berhenti total saat tab tidak dilihat,
+    // supaya halaman tidak tersendat saat sedang mengetik kode.
+    const timer = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchRecordings(true);
+    }, 30000);
     return () => window.clearInterval(timer);
   }, [recordingKey]);
 
