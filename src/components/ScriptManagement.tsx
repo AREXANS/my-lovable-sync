@@ -643,7 +643,11 @@ ${GAME_TAB_END}`;
     toast({ title: 'Copied!', description: 'Kode Game Tab untuk Main Script disalin' });
   };
 
-  /** Tempel/segarkan blok Game Tab langsung ke Main Script tanpa copy-paste manual. */
+  /** Tempel/segarkan blok Game Tab langsung ke Main Script tanpa copy-paste manual.
+   *  - Ikut slot aktif (Primary/Backup) dari editor.
+   *  - TIDAK pernah meng-obfuscate. Jika Obf OFF, dasar yang dipakai adalah
+   *    kode mentah (plain_content) bila tersedia, supaya hasil integrasi tidak
+   *    ikut ter-obfuscate oleh isi lama yang masih teracak. */
   const integrateGameTabToMain = async () => {
     const main = scripts.find((s) => s.script_type === 'main') || scripts.find((s) => s.name === 'main');
     if (!main) {
@@ -652,7 +656,16 @@ ${GAME_TAB_END}`;
     }
     setSaving(main.id);
     try {
-      const current = editedContent[main.id] ?? main.content ?? '';
+      const slot = getSlot(main.id);
+      const stored = slot === 'backup' ? (main.backup_content ?? '') : (main.content ?? '');
+      const plain = ((main as any).plain_content as string | null | undefined) ?? '';
+      const obfOff = main.obfuscate_enabled === false;
+      // Obf OFF → selalu mulai dari kode mentah yang terbaca, bukan sisa obfuscate lama.
+      const base = obfOff && plain.trim() ? plain : stored;
+      const editedBuf = slot === 'backup' ? backupEdited[main.id] : editedContent[main.id];
+      const hasUserEdits = editedBuf !== undefined && editedBuf !== stored;
+      const current = hasUserEdits ? editedBuf! : base;
+
       const snippet = buildGameTabSnippet();
       const begin = current.indexOf(GAME_TAB_BEGIN);
       const end = current.indexOf(GAME_TAB_END);
@@ -661,16 +674,25 @@ ${GAME_TAB_END}`;
           ? current.slice(0, begin) + snippet + current.slice(end + GAME_TAB_END.length)
           : `${current.replace(/\s+$/, '')}\n\n${snippet}\n`;
 
+      const payload: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+        // Simpan salinan mentah agar toggle Obf OFF selalu bisa mengembalikan kode terbaca.
+        plain_content: next,
+      };
+      if (slot === 'backup') payload.backup_content = next;
+      else payload.content = next;
+
       const { error } = await supabase
         .from('lua_scripts')
-        .update({ content: next, updated_at: new Date().toISOString() } as any)
+        .update(payload as any)
         .eq('id', main.id);
       if (error) throw error;
 
-      setEditedContent((prev) => ({ ...prev, [main.id]: next }));
+      if (slot === 'backup') setBackupEdited((prev) => ({ ...prev, [main.id]: next }));
+      else setEditedContent((prev) => ({ ...prev, [main.id]: next }));
       toast({
         title: 'Terintegrasi',
-        description: `Blok Game Tab ${begin !== -1 ? 'diperbarui' : 'ditambahkan'} di "${main.display_name}"`,
+        description: `Blok Game Tab ${begin !== -1 ? 'diperbarui' : 'ditambahkan'} di slot ${slot === 'backup' ? 'Backup' : 'Primary'} "${main.display_name}" (tanpa obfuscate)`,
       });
       fetchScripts();
     } catch {
