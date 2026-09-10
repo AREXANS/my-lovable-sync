@@ -688,11 +688,64 @@ ${GAME_TAB_END}`;
     toast({ title: 'Copied!', description: 'Kode Game Tab untuk Main Script disalin' });
   };
 
+  const luaStr = (v: string): string => {
+    return '"' + v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r/g, '').replace(/\n/g, '\\n') + '"';
+  };
+
+  const GAME_TAB_CATEGORIES = ['crack', 'random', 'game'];
+
+  /** Bangun blok Game Tab dari data mentah di Supabase, tanpa loadstring/HttpGet
+   *  dan tanpa minifikasi/obfuscasi — kategori Crack/Random/Game dimasukkan
+   *  langsung sebagai tabel Lua callback-function. */
+  const buildInlineGameTabBlock = async (): Promise<string> => {
+    const { data, error } = await supabase
+      .from('lua_scripts')
+      .select('id, name, display_name, description, category, plain_content, raw_content, content, is_active, archived' as any)
+      .eq('is_active', true);
+    if (error) throw error;
+
+    const rows = ((data as any[]) ?? []).filter((r) => {
+      if (r.archived) return false;
+      const cat = String(r.category || '').toLowerCase().trim();
+      return GAME_TAB_CATEGORIES.includes(cat);
+    });
+
+    const entries = rows
+      .map((r) => ({
+        name: r.display_name || r.name,
+        desc: r.description || `Script Premium Arexans ${r.display_name || r.name}`,
+        category: String(r.category || '').toLowerCase(),
+        code: String(r.plain_content || r.raw_content || r.content || ''),
+      }))
+      .filter((e) => e.code.length > 0);
+
+    const body = entries
+      .map(
+        (e) =>
+          `{name=${luaStr(e.name)},desc=${luaStr(e.desc)},category=${luaStr(e.category)},callback=function()\n${e.code}\nend}`,
+      )
+      .join(',\n');
+
+    return `${GAME_TAB_BEGIN}
+-- Arexans Game Tab (inline raw dari Upload Lua Script: Crack / Random / Game)
+local GameScripts = {
+${body}
+}
+
+for _, s in ipairs(GameScripts) do
+    GameTab:AddButton({
+        Title = s.name,
+        Description = s.desc,
+        Callback = function() pcall(s.callback) end,
+    })
+end
+${GAME_TAB_END}`;
+  };
+
   /** Tempel/segarkan blok Game Tab langsung ke Main Script tanpa copy-paste manual.
-   *  - Ikut slot aktif (Primary/Backup) dari editor.
-   *  - TIDAK pernah meng-obfuscate. Jika Obf OFF, dasar yang dipakai adalah
-   *    kode mentah (plain_content) bila tersedia, supaya hasil integrasi tidak
-   *    ikut ter-obfuscate oleh isi lama yang masih teracak. */
+   *  - Selalu memakai kode MENTAH (plain_content) sebagai dasar.
+   *  - TIDAK pernah meng-obfuscate/minifikasi Game Tab maupun isi Main Script.
+   *  - Game script Crack/Random/Game dimasukkan inline, bukan via loadstring/HttpGet. */
   const integrateGameTabToMain = async () => {
     const main = scripts.find((s) => s.script_type === 'main') || scripts.find((s) => s.name === 'main');
     if (!main) {
@@ -704,14 +757,13 @@ ${GAME_TAB_END}`;
       const slot = getSlot(main.id);
       const stored = slot === 'backup' ? (main.backup_content ?? '') : (main.content ?? '');
       const plain = ((main as any).plain_content as string | null | undefined) ?? '';
-      const obfOff = main.obfuscate_enabled === false;
-      // Obf OFF → selalu mulai dari kode mentah yang terbaca, bukan sisa obfuscate lama.
-      const base = obfOff && plain.trim() ? plain : stored;
+      // Selalu utamakan kode mentah; jika belum ada plain_content, pakai slot aktif apa adanya.
+      const base = plain.trim() ? plain : stored;
       const editedBuf = slot === 'backup' ? backupEdited[main.id] : editedContent[main.id];
       const hasUserEdits = editedBuf !== undefined && editedBuf !== stored;
       const current = hasUserEdits ? editedBuf! : base;
 
-      const snippet = buildGameTabSnippet();
+      const snippet = await buildInlineGameTabBlock();
       const begin = current.indexOf(GAME_TAB_BEGIN);
       const end = current.indexOf(GAME_TAB_END);
       const next =
@@ -727,21 +779,18 @@ ${GAME_TAB_END}`;
       if (slot === 'backup') payload.backup_content = next;
       else payload.content = next;
 
-      const { error } = await supabase
-        .from('lua_scripts')
-        .update(payload as any)
-        .eq('id', main.id);
+      const { error } = await supabase.from('lua_scripts').update(payload as any).eq('id', main.id);
       if (error) throw error;
 
       if (slot === 'backup') setBackupEdited((prev) => ({ ...prev, [main.id]: next }));
       else setEditedContent((prev) => ({ ...prev, [main.id]: next }));
       toast({
         title: 'Terintegrasi',
-        description: `Blok Game Tab ${begin !== -1 ? 'diperbarui' : 'ditambahkan'} di slot ${slot === 'backup' ? 'Backup' : 'Primary'} "${main.display_name}" (tanpa obfuscate)`,
+        description: `Blok Game Tab ${begin !== -1 ? 'diperbarui' : 'ditambahkan'} di slot ${slot === 'backup' ? 'Backup' : 'Primary'} "${main.display_name}" (kode mentah, tanpa obfuscate)`,
       });
       fetchScripts();
-    } catch {
-      toast({ title: 'Error', description: 'Gagal integrasi ke Main Script', variant: 'destructive' });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : 'Gagal integrasi ke Main Script', variant: 'destructive' });
     } finally {
       setSaving(null);
     }
