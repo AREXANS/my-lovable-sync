@@ -29,6 +29,7 @@ interface LuaScript {
   description: string | null;
   content: string;
   backup_content?: string | null;
+  plain_content?: string | null;
   obfuscate_enabled?: boolean;
   script_type: string;
   is_active: boolean;
