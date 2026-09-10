@@ -521,16 +521,19 @@ const ScriptManagement: FC = () => {
         contentToSave = wrapWithWhitelist(editedContent[script.id]);
       }
 
+      // Simpan selalu salinan kode terbaca supaya sakelar Obf bisa dimatikan kapan saja.
+      const plainSource = contentToSave || '';
+
       // Obfuscate hanya jika sakelar Obfuscate untuk script ini aktif
       const obfEnabled = script.obfuscate_enabled !== false;
       let wasObfuscated = false;
       if (obfEnabled) {
-        const obfuscated = await obfuscateSource(contentToSave || '');
-        wasObfuscated = obfuscated !== contentToSave;
+        const obfuscated = await obfuscateSource(plainSource);
+        wasObfuscated = obfuscated !== plainSource;
         contentToSave = obfuscated;
       }
 
-      const payload: any = { updated_at: new Date().toISOString() };
+      const payload: any = { updated_at: new Date().toISOString(), plain_content: plainSource };
       if (slot === 'primary') payload.content = contentToSave;
       else payload.backup_content = contentToSave;
 
