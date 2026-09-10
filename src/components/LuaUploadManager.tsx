@@ -406,6 +406,7 @@ const LuaUploadManager: FC = () => {
   const [uploadDisplayName, setUploadDisplayName] = useState('');
   const [uploadDescription, setUploadDescription] = useState('');
   const [uploadObfuscate, setUploadObfuscate] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(30);
 
   const catOf = (s: UploadedScript) => (s.category || 'umum').trim() || 'umum';
   const categories = Array.from(new Set(scripts.map(catOf))).sort();
