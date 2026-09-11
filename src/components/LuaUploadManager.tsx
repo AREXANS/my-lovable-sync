@@ -563,6 +563,14 @@ const LuaUploadManager: FC = () => {
 
   const toggleObfuscate = async (script: UploadedScript) => {
     const next = !isObfOn(script);
+    // Script Game Tab (Crack/Random/Game) tidak boleh di-obfuscate — dipakai mentah oleh manifest.
+    if (next && isGameTabCategory(catOf(script))) {
+      toast({
+        title: 'Tidak perlu obfuscate',
+        description: `"${script.display_name}" adalah script Game Tab — selalu disimpan mentah.`,
+      });
+      return;
+    }
     try {
       const full = await fetchFull(script);
       const plain = plainOf(full);
