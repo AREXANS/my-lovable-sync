@@ -414,6 +414,10 @@ const LuaUploadManager: FC = () => {
   const resolveUploadCategory = () =>
     uploadCategory === '__new__' ? (newCategoryName.trim() || 'umum') : uploadCategory;
 
+  // Kategori Game Tab (Crack/Random/Game) SELALU disimpan mentah — tidak pernah di-obfuscate luast.
+  const GAME_TAB_CATS = ['crack', 'random', 'game'];
+  const isGameTabCategory = (cat: string) => GAME_TAB_CATS.includes((cat || '').toLowerCase().trim());
+
   const q = searchQuery.trim().toLowerCase();
   const cq = categoryQuery.trim().toLowerCase();
 
@@ -559,6 +563,14 @@ const LuaUploadManager: FC = () => {
 
   const toggleObfuscate = async (script: UploadedScript) => {
     const next = !isObfOn(script);
+    // Script Game Tab (Crack/Random/Game) tidak boleh di-obfuscate — dipakai mentah oleh manifest.
+    if (next && isGameTabCategory(catOf(script))) {
+      toast({
+        title: 'Tidak perlu obfuscate',
+        description: `"${script.display_name}" adalah script Game Tab — selalu disimpan mentah.`,
+      });
+      return;
+    }
     try {
       const full = await fetchFull(script);
       const plain = plainOf(full);
@@ -616,11 +628,12 @@ const LuaUploadManager: FC = () => {
       const title = uploadDisplayName.trim() || fileBase;
       const desc = uploadDescription.trim() || `Script Premium Arexans ${title}`;
       const category = resolveUploadCategory();
+      const gameRaw = isGameTabCategory(category); // Game Tab selalu mentah
       const scriptName = title.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
 
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
-      const enabled = uploadObfuscate;
+      const enabled = uploadObfuscate && !gameRaw;
       const p = await buildPayload(dbName, rawOriginal, enabled);
       const wasObfuscated = p.wasObfuscated;
 
@@ -664,11 +677,12 @@ const LuaUploadManager: FC = () => {
       if (!displayName) return;
       const desc = uploadDescription.trim() || `Script Premium Arexans ${displayName}`;
       const category = resolveUploadCategory();
+      const gameRaw = isGameTabCategory(category); // Game Tab selalu mentah
       const scriptName = displayName.replace(/\.(lua|txt)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
       setUploading(true);
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
-      const enabled = uploadObfuscate;
+      const enabled = uploadObfuscate && !gameRaw;
       const p = await buildPayload(dbName, text, enabled);
       const wasObfuscated = p.wasObfuscated;
       if (existing) {

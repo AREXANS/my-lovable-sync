@@ -511,6 +511,11 @@ const ScriptManagement: FC = () => {
     }
   };
 
+  // Kategori Game Tab (Crack/Random/Game) SELALU disimpan mentah — tidak pernah di-obfuscate luast.
+  const GAME_TAB_CATS = ['crack', 'random', 'game'];
+  const isGameTabScript = (script: LuaScript) =>
+    GAME_TAB_CATS.includes(String((script as any).category || '').toLowerCase().trim());
+
   const handleSaveScript = async (script: LuaScript) => {
     setSaving(script.id);
     try {
@@ -524,8 +529,8 @@ const ScriptManagement: FC = () => {
       // Simpan selalu salinan kode terbaca supaya sakelar Obf bisa dimatikan kapan saja.
       const plainSource = contentToSave || '';
 
-      // Obfuscate hanya jika sakelar Obfuscate untuk script ini aktif
-      const obfEnabled = script.obfuscate_enabled !== false;
+      // Obfuscate hanya jika sakelar Obfuscate aktif DAN bukan script Game Tab
+      const obfEnabled = script.obfuscate_enabled !== false && !isGameTabScript(script);
       let wasObfuscated = false;
       if (obfEnabled) {
         const obfuscated = await obfuscateSource(plainSource);
@@ -588,6 +593,14 @@ const ScriptManagement: FC = () => {
    *  ON meng-obfuscate salinan terbaca. Tidak pernah mengacak saat OFF. */
   const handleToggleObfuscate = async (script: LuaScript) => {
     const next = script.obfuscate_enabled === false; // true = menyalakan
+    // Script Game Tab tidak boleh di-obfuscate — kode mentahnya dipakai manifest.
+    if (next && isGameTabScript(script)) {
+      toast({
+        title: 'Tidak perlu obfuscate',
+        description: `"${script.display_name}" adalah script Game Tab (Crack/Random/Game) — selalu disimpan mentah.`,
+      });
+      return;
+    }
     const slot = getSlot(script.id);
     const stored = slot === 'backup' ? (script.backup_content || '') : (script.content || '');
     const storedPlain = (script.plain_content || '').trim()
