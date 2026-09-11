@@ -780,7 +780,16 @@ ${GAME_TAB_END}`;
    *  - TIDAK pernah meng-obfuscate/minifikasi Game Tab maupun isi Main Script.
    *  - Game script Crack/Random/Game dimasukkan inline, bukan via loadstring/HttpGet. */
   const integrateGameTabToMain = async () => {
-    const main = scripts.find((s) => s.script_type === 'main') || scripts.find((s) => s.name === 'main');
+    let main = scripts.find((s) => s.script_type === 'main') || scripts.find((s) => s.name === 'main');
+    if (!main) {
+      // Fallback: daftar script di state mungkin gagal dimuat, ambil langsung dari database.
+      const { data: fetched } = await supabase
+        .from('lua_scripts')
+        .select('id, name, display_name, script_type, content, backup_content, plain_content' as any)
+        .eq('name', 'main')
+        .maybeSingle();
+      if (fetched) main = fetched as unknown as LuaScript;
+    }
     if (!main) {
       toast({ title: 'Main Script tidak ditemukan', description: 'Buat script bertipe Main dulu.', variant: 'destructive' });
       return;
