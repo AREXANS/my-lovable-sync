@@ -625,7 +625,7 @@ const LuaUploadManager: FC = () => {
       const dbName = `uploaded_${scriptName}`;
 
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
-      const enabled = uploadObfuscate;
+      const enabled = uploadObfuscate && !gameRaw;
       const p = await buildPayload(dbName, rawOriginal, enabled);
       const wasObfuscated = p.wasObfuscated;
 
@@ -669,11 +669,12 @@ const LuaUploadManager: FC = () => {
       if (!displayName) return;
       const desc = uploadDescription.trim() || `Script Premium Arexans ${displayName}`;
       const category = resolveUploadCategory();
+      const gameRaw = isGameTabCategory(category); // Game Tab selalu mentah
       const scriptName = displayName.replace(/\.(lua|txt)$/i, '').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
       setUploading(true);
       const { data: existing } = await supabase.from('lua_scripts').select('id, obfuscate_enabled').eq('name', dbName).maybeSingle();
-      const enabled = uploadObfuscate;
+      const enabled = uploadObfuscate && !gameRaw;
       const p = await buildPayload(dbName, text, enabled);
       const wasObfuscated = p.wasObfuscated;
       if (existing) {
