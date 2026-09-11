@@ -194,26 +194,45 @@ const ScriptManagement: FC = () => {
     setLoading(true);
     try {
       const ALLOWED = ['keysystem', 'main', 'library', 'game'];
-      const { data, error } = await supabase
+      // Fase 1: metadata ringan (tanpa kolom konten besar) supaya query tidak timeout.
+      const { data: metaRows, error: metaError } = await supabase
         .from('lua_scripts')
-        .select('*')
-        .in('name', ALLOWED);
+        .select('id, name, display_name, description, script_type, is_active, obfuscate_enabled, created_at, updated_at' as any)
+        .in('name', ALLOWED)
+        .limit(20);
 
-      if (error) throw error;
-      if (data) {
-        const sorted = [...data].sort(
-          (a, b) => ALLOWED.indexOf(a.name) - ALLOWED.indexOf(b.name)
-        );
-        setScripts(sorted as LuaScript[]);
-        const primary: Record<string, string> = {};
-        const backup: Record<string, string> = {};
-        sorted.forEach((s: any) => {
-          primary[s.id] = s.content ?? '';
-          backup[s.id] = s.backup_content ?? '';
-        });
-        setEditedContent(primary);
-        setBackupEdited(backup);
-      }
+      if (metaError) throw metaError;
+
+      const metas = ((metaRows as any[]) ?? []).sort(
+        (a, b) => ALLOWED.indexOf(a.name) - ALLOWED.indexOf(b.name)
+      );
+
+      // Fase 2: ambil konten per-id (primary key, cepat) secara paralel.
+      const withContent = await Promise.all(
+        metas.map(async (m: any) => {
+          const { data: full } = await supabase
+            .from('lua_scripts')
+            .select('content, backup_content, plain_content' as any)
+            .eq('id', m.id)
+            .maybeSingle();
+          return {
+            ...m,
+            content: (full as any)?.content ?? '',
+            backup_content: (full as any)?.backup_content ?? '',
+            plain_content: (full as any)?.plain_content ?? '',
+          };
+        })
+      );
+
+      setScripts(withContent as LuaScript[]);
+      const primary: Record<string, string> = {};
+      const backup: Record<string, string> = {};
+      withContent.forEach((s: any) => {
+        primary[s.id] = s.content ?? '';
+        backup[s.id] = s.backup_content ?? '';
+      });
+      setEditedContent(primary);
+      setBackupEdited(backup);
     } catch (error) {
       console.error('Failed to fetch scripts:', error);
       toast({ title: 'Error', description: 'Gagal mengambil data scripts', variant: 'destructive' });
