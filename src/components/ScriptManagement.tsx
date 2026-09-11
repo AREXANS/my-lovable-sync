@@ -593,6 +593,14 @@ const ScriptManagement: FC = () => {
    *  ON meng-obfuscate salinan terbaca. Tidak pernah mengacak saat OFF. */
   const handleToggleObfuscate = async (script: LuaScript) => {
     const next = script.obfuscate_enabled === false; // true = menyalakan
+    // Script Game Tab tidak boleh di-obfuscate — kode mentahnya dipakai manifest.
+    if (next && isGameTabScript(script)) {
+      toast({
+        title: 'Tidak perlu obfuscate',
+        description: `"${script.display_name}" adalah script Game Tab (Crack/Random/Game) — selalu disimpan mentah.`,
+      });
+      return;
+    }
     const slot = getSlot(script.id);
     const stored = slot === 'backup' ? (script.backup_content || '') : (script.content || '');
     const storedPlain = (script.plain_content || '').trim()
