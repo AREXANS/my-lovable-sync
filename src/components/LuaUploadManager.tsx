@@ -414,6 +414,10 @@ const LuaUploadManager: FC = () => {
   const resolveUploadCategory = () =>
     uploadCategory === '__new__' ? (newCategoryName.trim() || 'umum') : uploadCategory;
 
+  // Kategori Game Tab (Crack/Random/Game) SELALU disimpan mentah — tidak pernah di-obfuscate luast.
+  const GAME_TAB_CATS = ['crack', 'random', 'game'];
+  const isGameTabCategory = (cat: string) => GAME_TAB_CATS.includes((cat || '').toLowerCase().trim());
+
   const q = searchQuery.trim().toLowerCase();
   const cq = categoryQuery.trim().toLowerCase();
 
