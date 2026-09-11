@@ -620,6 +620,7 @@ const LuaUploadManager: FC = () => {
       const title = uploadDisplayName.trim() || fileBase;
       const desc = uploadDescription.trim() || `Script Premium Arexans ${title}`;
       const category = resolveUploadCategory();
+      const gameRaw = isGameTabCategory(category); // Game Tab selalu mentah
       const scriptName = title.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const dbName = `uploaded_${scriptName}`;
 
