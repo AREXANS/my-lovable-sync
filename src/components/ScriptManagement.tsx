@@ -733,14 +733,15 @@ ${GAME_TAB_END}`;
     const { data, error } = await supabase
       .from('lua_scripts')
       .select('id, name, display_name, description, category, plain_content, raw_content, content, is_active, archived' as any)
-      .eq('is_active', true);
+      .in('category', GAME_TAB_CATEGORIES)
+      .eq('is_active', true)
+      .limit(300);
     if (error) throw error;
 
-    const rows = ((data as any[]) ?? []).filter((r) => {
-      if (r.archived) return false;
-      const cat = String(r.category || '').toLowerCase().trim();
-      return GAME_TAB_CATEGORIES.includes(cat);
-    });
+    const rows = ((data as any[]) ?? []).filter((r) => !r.archived);
+    if (rows.length === 0) {
+      throw new Error('Belum ada script aktif di kategori Crack/Random/Game');
+    }
 
     const entries = rows
       .map((r) => ({
