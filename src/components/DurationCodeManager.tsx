@@ -12,12 +12,22 @@ interface DurationCode {
   id: string;
   code: string;
   duration_days: number;
+  duration_hours?: number;
+  duration_minutes?: number;
   expires_at: string;
   max_uses_per_key: number;
   is_active: boolean;
   used_by: { key: string; claimedAt: string }[];
   created_at: string;
 }
+
+const formatDuration = (d: number, h: number, m: number): string => {
+  const parts: string[] = [];
+  if (d > 0) parts.push(`${d} hari`);
+  if (h > 0) parts.push(`${h} jam`);
+  if (m > 0) parts.push(`${m} menit`);
+  return parts.length > 0 ? parts.join(' ') : '0 menit';
+};
 
 const toLocalDatetimeString = (date: Date): string => {
   const pad = (n: number) => n.toString().padStart(2, '0');
