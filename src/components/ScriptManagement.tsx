@@ -658,6 +658,7 @@ const ScriptManagement: FC = () => {
   /** Sakelar Obf (default OFF): ON langsung meng-obfuscate kode mentah yang sudah ada
    *  (tanpa upload ulang), OFF mengembalikan kode terbaca ke slot aktif. */
   const handleToggleObfuscate = async (script: LuaScript) => {
+    if (saving === script.id) return; // cegah klik ganda saat proses berjalan
     const next = script.obfuscate_enabled !== true; // true = menyalakan
     // Script Game Tab tidak boleh di-obfuscate — kode mentahnya dipakai manifest.
     if (next && isGameTabScript(script)) {
@@ -1217,12 +1218,13 @@ ${GAME_TAB_END}`;
                     </span>
                     <span className="mx-1 h-4 w-px bg-border" />
                     <Switch
-                      checked={script.obfuscate_enabled !== false}
+                      checked={script.obfuscate_enabled === true}
+                      disabled={saving === script.id}
                       onCheckedChange={() => handleToggleObfuscate(script)}
                     />
-                    <span className={`text-xs sm:text-sm flex items-center gap-1 ${script.obfuscate_enabled !== false ? 'text-cyan-400' : 'text-muted-foreground'}`}>
+                    <span className={`text-xs sm:text-sm flex items-center gap-1 ${script.obfuscate_enabled === true ? 'text-cyan-400' : 'text-muted-foreground'}`}>
                       <Shield className="w-3 h-3" />
-                      Obf {script.obfuscate_enabled !== false ? 'ON' : 'OFF'}
+                      Obf {script.obfuscate_enabled === true ? 'ON' : 'OFF'}
                     </span>
                   </div>
                   {hasChanges(script) && (
