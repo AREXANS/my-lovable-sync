@@ -23,7 +23,9 @@ function sanitize(record: Record<string, unknown>, requesterKey?: string | null,
     description: record.description,
     owner_username: record.owner_username,
     game_id: record.game_id,
-    recording_data: record.recording_data,
+    ...(Object.prototype.hasOwnProperty.call(record, "recording_data")
+      ? { recording_data: record.recording_data }
+      : {}),
     is_public: record.is_public,
     duration_seconds: record.duration_seconds,
     source: record.source,
