@@ -147,7 +147,7 @@ serve(async (req) => {
         message: `Berhasil! Durasi +${durationLabel} ditambahkan`,
         durationAdded: { days, hours, minutes },
         newExpiry: newExpiry.toISOString(),
-        newExpiryDisplay: newExpiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+        newExpiryDisplay: newExpiry.toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
