@@ -21,6 +21,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+// Konversi unit popup masa berlaku loadstring ke jam.
+const UNIT_HOURS: Record<'minutes' | 'hours' | 'days', number> = {
+  minutes: 1 / 60,
+  hours: 1,
+  days: 24,
+};
 
 interface LuaScript {
   id: string;
@@ -537,9 +552,14 @@ const ScriptManagement: FC = () => {
 
   // Obfuscate luast level 3 — versi ketat (melempar error bila gagal).
   const obfuscateStrict = async (raw: string): Promise<string> => {
-    const { data, error } = await supabase.functions.invoke('obfuscate-lua', {
+    const invoke = supabase.functions.invoke('obfuscate-lua', {
       body: { code: raw, preset: 'level3', outputStyle: 'singleline' },
     });
+    // Batas waktu 60 detik supaya sakelar Obf tidak pernah menggantung halaman.
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Layanan obfuscate tidak merespons (timeout 60 detik)')), 60000),
+    );
+    const { data, error } = (await Promise.race([invoke, timeout])) as Awaited<typeof invoke>;
     if (error) throw new Error(error.message || 'Obfuscator tidak merespons');
     const d = data as any;
     if (d?.error) throw new Error(String(d.error));
@@ -638,6 +658,7 @@ const ScriptManagement: FC = () => {
   /** Sakelar Obf (default OFF): ON langsung meng-obfuscate kode mentah yang sudah ada
    *  (tanpa upload ulang), OFF mengembalikan kode terbaca ke slot aktif. */
   const handleToggleObfuscate = async (script: LuaScript) => {
+    if (saving === script.id) return; // cegah klik ganda saat proses berjalan
     const next = script.obfuscate_enabled !== true; // true = menyalakan
     // Script Game Tab tidak boleh di-obfuscate — kode mentahnya dipakai manifest.
     if (next && isGameTabScript(script)) {
@@ -1197,12 +1218,13 @@ ${GAME_TAB_END}`;
                     </span>
                     <span className="mx-1 h-4 w-px bg-border" />
                     <Switch
-                      checked={script.obfuscate_enabled !== false}
+                      checked={script.obfuscate_enabled === true}
+                      disabled={saving === script.id}
                       onCheckedChange={() => handleToggleObfuscate(script)}
                     />
-                    <span className={`text-xs sm:text-sm flex items-center gap-1 ${script.obfuscate_enabled !== false ? 'text-cyan-400' : 'text-muted-foreground'}`}>
+                    <span className={`text-xs sm:text-sm flex items-center gap-1 ${script.obfuscate_enabled === true ? 'text-cyan-400' : 'text-muted-foreground'}`}>
                       <Shield className="w-3 h-3" />
-                      Obf {script.obfuscate_enabled !== false ? 'ON' : 'OFF'}
+                      Obf {script.obfuscate_enabled === true ? 'ON' : 'OFF'}
                     </span>
                   </div>
                   {hasChanges(script) && (
@@ -1600,6 +1622,58 @@ ${GAME_TAB_END}`;
            </div>
         </CardContent>
       </Card>
+
+      {/* Popup pemilihan masa berlaku loadstring */}
+      <Dialog open={trialDialogOpen} onOpenChange={setTrialDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Masa Berlaku Loadstring</DialogTitle>
+            <DialogDescription>
+              Atur kapan loadstring{trialTarget?.obfuscated ? ' ter-obfuscate' : ''} untuk "
+              {trialTarget?.script.display_name}" berhenti jalan. Kosongkan batas agar berlaku selamanya.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <p className="text-sm font-medium">Tanpa batas waktu</p>
+                <p className="text-xs text-muted-foreground">Loadstring tidak pernah expired</p>
+              </div>
+              <Switch checked={trialUnlimited} onCheckedChange={setTrialUnlimited} />
+            </div>
+            {!trialUnlimited && (
+              <div className="flex items-end gap-2">
+                <div className="flex-1 space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Durasi (bebas)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={trialAmount}
+                    onChange={(e) => setTrialAmount(Math.max(1, Number(e.target.value) || 1))}
+                  />
+                </div>
+                <div className="w-36 space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Satuan</Label>
+                  <Select value={trialUnit} onValueChange={(v) => setTrialUnit(v as 'minutes' | 'hours' | 'days')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutes">Menit</SelectItem>
+                      <SelectItem value="hours">Jam</SelectItem>
+                      <SelectItem value="days">Hari</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setTrialDialogOpen(false)}>Batal</Button>
+            <Button onClick={confirmCopyLoadstring} className="bg-cyan-600 hover:bg-cyan-500">
+              <Copy className="w-4 h-4 mr-1" /> Salin Loadstring
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
