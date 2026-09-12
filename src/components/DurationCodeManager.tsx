@@ -39,8 +39,39 @@ const DurationCodeManager: FC = () => {
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [newCode, setNewCode] = useState('');
-  const [newDuration, setNewDuration] = useState(3);
+  const [newDays, setNewDays] = useState(3);
+  const [newHours, setNewHours] = useState(0);
+  const [newMinutes, setNewMinutes] = useState(0);
   const [newExpiry, setNewExpiry] = useState(toLocalDatetimeString(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)));
+  const [meta, setMeta] = useState<Record<string, { d: number; h: number; m: number }>>({});
+  const [notice, setNotice] = useState<{ text: string; expires_at: string } | null>(null);
+
+  const fetchMeta = async (): Promise<Record<string, { d: number; h: number; m: number }>> => {
+    const { data } = await supabase.from('app_settings').select('value').eq('key', 'duration_code_meta').maybeSingle();
+    try { return data?.value ? JSON.parse(data.value) : {}; } catch { return {}; }
+  };
+
+  const fetchNotice = async () => {
+    const { data } = await supabase.from('app_settings').select('value').eq('key', 'script_notice').maybeSingle();
+    try { setNotice(data?.value ? JSON.parse(data.value) : null); } catch { setNotice(null); }
+  };
+
+  const saveMeta = async (m: Record<string, { d: number; h: number; m: number }>) => {
+    setMeta(m);
+    await supabase.from('app_settings').upsert(
+      { key: 'duration_code_meta', value: JSON.stringify(m), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+  };
+
+  const clearNotice = async () => {
+    await supabase.from('app_settings').upsert(
+      { key: 'script_notice', value: JSON.stringify(null), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    setNotice(null);
+    toast({ title: 'Dihapus', description: 'Pengumuman di script pengguna dihapus' });
+  };
 
   const fetchCodes = async () => {
     setLoading(true);
