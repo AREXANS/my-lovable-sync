@@ -253,7 +253,7 @@ const DurationCodeManager: FC = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <code className="font-mono font-bold text-emerald-400">{c.code}</code>
                     <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-                      +{c.duration_days} hari
+                      +{formatDuration(c.duration_days, c.duration_hours ?? 0, c.duration_minutes ?? 0)}
                     </span>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
