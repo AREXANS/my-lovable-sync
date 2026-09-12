@@ -81,8 +81,13 @@ const DurationCodeManager: FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
       if (!error && data) {
+        const metaMap = await fetchMeta();
+        setMeta(metaMap);
         setCodes(data.map((d: any) => ({
           ...d,
+          duration_hours: metaMap[d.code]?.h ?? 0,
+          duration_minutes: metaMap[d.code]?.m ?? 0,
+          duration_days: metaMap[d.code]?.d ?? d.duration_days,
           used_by: Array.isArray(d.used_by) ? d.used_by : [],
         })));
       }
@@ -93,7 +98,7 @@ const DurationCodeManager: FC = () => {
     }
   };
 
-  useEffect(() => { fetchCodes(); }, []);
+  useEffect(() => { fetchCodes(); fetchNotice(); }, []);
 
   const generateCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
