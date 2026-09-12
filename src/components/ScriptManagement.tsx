@@ -571,8 +571,8 @@ const ScriptManagement: FC = () => {
       // Simpan selalu salinan kode terbaca supaya sakelar Obf bisa dimatikan kapan saja.
       const plainSource = contentToSave || '';
 
-      // Obfuscate hanya jika sakelar Obfuscate aktif DAN bukan script Game Tab
-      const obfEnabled = script.obfuscate_enabled !== false && !isGameTabScript(script);
+      // Default OFF: obfuscate hanya jika sakelar benar-benar ON DAN bukan script Game Tab
+      const obfEnabled = script.obfuscate_enabled === true && !isGameTabScript(script);
       let wasObfuscated = false;
       if (obfEnabled) {
         const obfuscated = await obfuscateSource(plainSource);
