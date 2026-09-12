@@ -160,6 +160,8 @@ const ScriptManagement: FC = () => {
   const [enableWhitelistWrap, setEnableWhitelistWrap] = useState<Record<string, boolean>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [selectedEndpoint, setSelectedEndpoint] = useState<'supabase' | 'current'>('supabase');
+  // 0 = tanpa batas, selain itu jumlah jam masa trial loadstring
+  const [trialHours, setTrialHours] = useState<number>(0);
   const [recordings, setRecordings] = useState<LuaRecording[]>([]);
   const [recordingKey, setRecordingKey] = useState('');
   const [recordingsLoading, setRecordingsLoading] = useState(false);
