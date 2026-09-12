@@ -203,6 +203,16 @@ const DurationCodeManager: FC = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {notice?.text && (
+          <div className="flex items-center justify-between gap-2 p-3 rounded-lg border border-sky-500/30 bg-sky-500/10">
+            <p className="text-xs text-sky-300">
+              📢 Pengumuman aktif di script pengguna: <span className="font-medium">{notice.text}</span>
+            </p>
+            <Button variant="ghost" size="sm" onClick={clearNotice} title="Hapus pengumuman">
+              <Trash2 className="w-3.5 h-3.5 text-sky-300" />
+            </Button>
+          </div>
+        )}
         {showForm && (
           <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
