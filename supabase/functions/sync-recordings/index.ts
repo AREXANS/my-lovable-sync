@@ -94,7 +94,7 @@ serve(async (req) => {
       const key = url.searchParams.get("key");
       const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 50), 1), 100);
       const singleId = url.searchParams.get("id");
-      // recording_data bisa puluhan MB; hanya kirim saat diminta eksplisit.
+      // v2: recording_data bisa puluhan MB; hanya kirim saat diminta eksplisit.
       const includeData = Boolean(singleId) || url.searchParams.get("include") === "data";
       const columns = `id,title,description,owner_username,owner_key,game_id,${includeData ? "recording_data," : ""}is_public,duration_seconds,source,created_at,updated_at,pinned,likes`;
 
