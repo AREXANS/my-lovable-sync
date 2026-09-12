@@ -43,7 +43,7 @@ interface LuaRecording {
   description: string | null;
   owner_username: string | null;
   game_id: string | null;
-  recording_data: unknown;
+  recording_data?: unknown;
   is_public: boolean;
   duration_seconds: number | null;
   created_at: string;
@@ -383,8 +383,22 @@ const ScriptManagement: FC = () => {
 
 
   const copyRecordingData = async (recording: LuaRecording) => {
-    await navigator.clipboard.writeText(JSON.stringify(recording.recording_data, null, 2));
-    toast({ title: 'Copied!', description: `Data rekaman "${recording.title}" disalin` });
+    try {
+      let data = recording.recording_data;
+      if (data === undefined || data === null) {
+        const params = new URLSearchParams({ id: recording.id });
+        const activeKey = recordingKeyRef.current.trim();
+        if (activeKey) params.set('key', activeKey);
+        const res = await fetch(`${SUPABASE_API_BASE}/sync-recordings?${params.toString()}`);
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error || 'Gagal mengambil data rekaman');
+        data = json.recordings?.[0]?.recording_data ?? null;
+      }
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      toast({ title: 'Copied!', description: `Data rekaman "${recording.title}" disalin` });
+    } catch (e) {
+      toast({ title: 'Error', description: e instanceof Error ? e.message : 'Gagal menyalin data rekaman', variant: 'destructive' });
+    }
   };
 
   const deleteRecording = async (recording: LuaRecording) => {

@@ -23,7 +23,9 @@ function sanitize(record: Record<string, unknown>, requesterKey?: string | null,
     description: record.description,
     owner_username: record.owner_username,
     game_id: record.game_id,
-    recording_data: record.recording_data,
+    ...(Object.prototype.hasOwnProperty.call(record, "recording_data")
+      ? { recording_data: record.recording_data }
+      : {}),
     is_public: record.is_public,
     duration_seconds: record.duration_seconds,
     source: record.source,
@@ -91,14 +93,21 @@ serve(async (req) => {
       const scope = (url.searchParams.get("scope") || "public").toLowerCase();
       const key = url.searchParams.get("key");
       const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 50), 1), 100);
+      const singleId = url.searchParams.get("id");
+      // recording_data bisa puluhan MB; hanya kirim saat diminta eksplisit.
+      const includeData = Boolean(singleId) || url.searchParams.get("include") === "data";
+      const columns = `id,title,description,owner_username,owner_key,game_id,${includeData ? "recording_data," : ""}is_public,duration_seconds,source,created_at,updated_at,pinned,likes`;
 
       let query = supabase
         .from("lua_recordings")
-        .select("id,title,description,owner_username,owner_key,game_id,recording_data,is_public,duration_seconds,source,created_at,updated_at,pinned,likes")
+        .select(columns)
         .order("pinned", { ascending: false })
         .order("likes", { ascending: false })
         .order("updated_at", { ascending: false })
-        .limit(limit);
+        .limit(singleId ? 1 : limit);
+
+      if (singleId) query = query.eq("id", singleId);
+
 
       if (scope === "mine") {
         const valid = await validateKey(supabase, key);
