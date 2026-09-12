@@ -874,11 +874,26 @@ ${GAME_TAB_END}`;
     return `${SUPABASE_API_BASE}/get-loader?name=${encodeURIComponent(script.name)}${slotSuffix(script.id)}`;
   };
 
+  /** Bungkus loadstring dengan batas waktu trial (0 = tanpa batas). */
+  const wrapWithTrial = (inner: string) => {
+    const hours = Number(trialHours) || 0;
+    if (hours <= 0) return inner;
+    const expiresAt = Math.floor(Date.now() / 1000) + Math.floor(hours * 3600);
+    return `local _exp=${expiresAt} local _now=(os and os.time and os.time()) or 0 if _now>0 and _now>_exp then return warn("Trial loadstring sudah expired") end ${inner}`;
+  };
+
+  const trialLabel = () => {
+    const hours = Number(trialHours) || 0;
+    if (hours <= 0) return 'tanpa batas';
+    if (hours < 24) return `${hours} jam`;
+    return `${hours / 24} hari`;
+  };
+
   const copyLoadstringCode = (script: LuaScript) => {
     const url = getLoaderUrlForExecutor(script);
-    const code = `loadstring(game:HttpGet("${url}"))()`;
+    const code = wrapWithTrial(`loadstring(game:HttpGet("${url}"))()`);
     navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: `Loadstring (${getSlot(script.id)}) disalin` });
+    toast({ title: 'Copied!', description: `Loadstring (${getSlot(script.id)}) disalin — ${trialLabel()}` });
   };
 
   const copyObfuscatedLoadstring = (script: LuaScript) => {
@@ -889,10 +904,13 @@ ${GAME_TAB_END}`;
     const hex = Array.from(new TextEncoder().encode(inner))
       .map((b) => ((b ^ key) & 0xff).toString(16).padStart(2, '0'))
       .join('');
-    const code = `loadstring(loadstring(("${hex}"):gsub('..',function(h)return string.char(bit32.bxor(tonumber(h,16),${key}))end))())()`;
+    const code = wrapWithTrial(
+      `loadstring(loadstring(("${hex}"):gsub('..',function(h)return string.char(bit32.bxor(tonumber(h,16),${key}))end))())()`,
+    );
     navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: 'Loadstring ter-obfuscate disalin' });
+    toast({ title: 'Copied!', description: `Loadstring ter-obfuscate disalin — ${trialLabel()}` });
   };
+
 
   const getScriptTypeColor = (name: string) => {
     switch (name) {
