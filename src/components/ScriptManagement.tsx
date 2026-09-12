@@ -160,8 +160,12 @@ const ScriptManagement: FC = () => {
   const [enableWhitelistWrap, setEnableWhitelistWrap] = useState<Record<string, boolean>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [selectedEndpoint, setSelectedEndpoint] = useState<'supabase' | 'current'>('supabase');
-  // 0 = tanpa batas, selain itu jumlah jam masa trial loadstring
-  const [trialHours, setTrialHours] = useState<number>(0);
+  // Popup pemilihan masa berlaku loadstring
+  const [trialDialogOpen, setTrialDialogOpen] = useState(false);
+  const [trialTarget, setTrialTarget] = useState<{ script: LuaScript; obfuscated: boolean } | null>(null);
+  const [trialUnlimited, setTrialUnlimited] = useState(true);
+  const [trialAmount, setTrialAmount] = useState<number>(1);
+  const [trialUnit, setTrialUnit] = useState<'minutes' | 'hours' | 'days'>('hours');
   const [recordings, setRecordings] = useState<LuaRecording[]>([]);
   const [recordingKey, setRecordingKey] = useState('');
   const [recordingsLoading, setRecordingsLoading] = useState(false);
@@ -531,16 +535,23 @@ const ScriptManagement: FC = () => {
     }
   };
 
-  // Auto-obfuscate via luast edge function. Falls back to source on failure so saving never blocks.
+  // Obfuscate luast level 3 — versi ketat (melempar error bila gagal).
+  const obfuscateStrict = async (raw: string): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke('obfuscate-lua', {
+      body: { code: raw, preset: 'level3', outputStyle: 'singleline' },
+    });
+    if (error) throw new Error(error.message || 'Obfuscator tidak merespons');
+    const d = data as any;
+    if (d?.error) throw new Error(String(d.error));
+    const result = d?.result ?? d?.code ?? d?.obfuscated;
+    if (typeof result === 'string' && result.trim()) return result;
+    throw new Error('Obfuscator tidak mengembalikan hasil');
+  };
+
+  // Auto-obfuscate. Falls back to source on failure so saving never blocks.
   const obfuscateSource = async (raw: string): Promise<string> => {
     try {
-      const { data, error } = await supabase.functions.invoke('obfuscate-lua', {
-        body: { code: raw, preset: 'level3', outputStyle: 'singleline' },
-      });
-      if (error) throw error;
-      const result = (data as any)?.result ?? (data as any)?.code ?? (data as any)?.obfuscated;
-      if (typeof result === 'string' && result.trim()) return result;
-      return raw;
+      return await obfuscateStrict(raw);
     } catch {
       return raw;
     }
@@ -564,8 +575,8 @@ const ScriptManagement: FC = () => {
       // Simpan selalu salinan kode terbaca supaya sakelar Obf bisa dimatikan kapan saja.
       const plainSource = contentToSave || '';
 
-      // Obfuscate hanya jika sakelar Obfuscate aktif DAN bukan script Game Tab
-      const obfEnabled = script.obfuscate_enabled !== false && !isGameTabScript(script);
+      // Default OFF: obfuscate hanya jika sakelar benar-benar ON DAN bukan script Game Tab
+      const obfEnabled = script.obfuscate_enabled === true && !isGameTabScript(script);
       let wasObfuscated = false;
       if (obfEnabled) {
         const obfuscated = await obfuscateSource(plainSource);
@@ -624,10 +635,10 @@ const ScriptManagement: FC = () => {
     }
   };
 
-  /** Sakelar Obf: OFF langsung mengembalikan kode terbaca ke slot aktif,
-   *  ON meng-obfuscate salinan terbaca. Tidak pernah mengacak saat OFF. */
+  /** Sakelar Obf (default OFF): ON langsung meng-obfuscate kode mentah yang sudah ada
+   *  (tanpa upload ulang), OFF mengembalikan kode terbaca ke slot aktif. */
   const handleToggleObfuscate = async (script: LuaScript) => {
-    const next = script.obfuscate_enabled === false; // true = menyalakan
+    const next = script.obfuscate_enabled !== true; // true = menyalakan
     // Script Game Tab tidak boleh di-obfuscate — kode mentahnya dipakai manifest.
     if (next && isGameTabScript(script)) {
       toast({
@@ -638,23 +649,33 @@ const ScriptManagement: FC = () => {
     }
     const slot = getSlot(script.id);
     const stored = slot === 'backup' ? (script.backup_content || '') : (script.content || '');
+    const buffer = slot === 'backup' ? (backupEdited[script.id] || '') : (editedContent[script.id] || '');
     const storedPlain = (script.plain_content || '').trim()
       ? (script.plain_content as string)
-      : (script.obfuscate_enabled === false ? stored : '');
+      : (script.obfuscate_enabled !== true ? (stored || buffer) : '');
 
+    setSaving(script.id);
     try {
       const payload: any = { obfuscate_enabled: next, updated_at: new Date().toISOString() };
 
       if (next) {
-        const base = storedPlain || stored;
-        if (base.trim()) {
-          payload.plain_content = base;
-          const obf = await obfuscateSource(base);
-          if (slot === 'backup') payload.backup_content = obf;
-          else payload.content = obf;
+        // Ambil kode mentah yang ada sekarang — tidak perlu upload ulang.
+        const base = (storedPlain || stored || buffer).trim();
+        if (!base) {
+          toast({
+            title: 'Tidak ada kode',
+            description: `"${script.display_name}" masih kosong — isi kodenya dulu sebelum obfuscate.`,
+            variant: 'destructive',
+          });
+          return;
         }
+        payload.plain_content = base;
+        const obf = await obfuscateStrict(base);
+        if (slot === 'backup') payload.backup_content = obf;
+        else payload.content = obf;
       } else {
-        if (!storedPlain.trim()) {
+        const base = (storedPlain || '').trim();
+        if (!base) {
           toast({
             title: 'Tidak bisa dimatikan',
             description: `"${script.display_name}" belum menyimpan kode aslinya. Simpan sekali lagi kode terbaca, setelah itu sakelar Obf bisa dimatikan kapan saja.`,
@@ -662,8 +683,8 @@ const ScriptManagement: FC = () => {
           });
           return;
         }
-        if (slot === 'backup') payload.backup_content = storedPlain;
-        else payload.content = storedPlain;
+        if (slot === 'backup') payload.backup_content = base;
+        else payload.content = base;
       }
 
       const { error } = await supabase.from('lua_scripts').update(payload).eq('id', script.id);
@@ -677,11 +698,17 @@ const ScriptManagement: FC = () => {
 
       toast({
         title: next ? 'Obfuscate ON' : 'Obfuscate OFF',
-        description: `"${script.display_name}" ${next ? 'di-obfuscate sekarang juga' : 'langsung dikembalikan ke kode terbaca'}`,
+        description: `"${script.display_name}" ${next ? 'di-obfuscate luast level 3 sekarang juga' : 'langsung dikembalikan ke kode terbaca'}`,
       });
       fetchScripts();
-    } catch {
-      toast({ title: 'Error', description: 'Gagal mengubah status obfuscate', variant: 'destructive' });
+    } catch (e) {
+      toast({
+        title: 'Gagal obfuscate',
+        description: e instanceof Error ? e.message : 'Gagal mengubah status obfuscate',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(null);
     }
   };
 
@@ -877,40 +904,56 @@ ${GAME_TAB_END}`;
   };
 
   /** Bungkus loadstring dengan batas waktu trial (0 = tanpa batas). */
-  const wrapWithTrial = (inner: string) => {
-    const hours = Number(trialHours) || 0;
-    if (hours <= 0) return inner;
-    const expiresAt = Math.floor(Date.now() / 1000) + Math.floor(hours * 3600);
+  const wrapWithTrial = (inner: string, hours: number) => {
+    const h = Number(hours) || 0;
+    if (h <= 0) return inner;
+    const expiresAt = Math.floor(Date.now() / 1000) + Math.floor(h * 3600);
     return `local _exp=${expiresAt} local _now=(os and os.time and os.time()) or 0 if _now>0 and _now>_exp then return warn("Trial loadstring sudah expired") end ${inner}`;
   };
 
-  const trialLabel = () => {
-    const hours = Number(trialHours) || 0;
-    if (hours <= 0) return 'tanpa batas';
-    if (hours < 24) return `${hours} jam`;
-    return `${hours / 24} hari`;
+  const trialLabel = (hours: number) => {
+    const h = Number(hours) || 0;
+    if (h <= 0) return 'tanpa batas';
+    if (h < 1) return `${Math.round(h * 60)} menit`;
+    if (h < 24) return `${h} jam`;
+    return `${+(h / 24).toFixed(2)} hari`;
   };
 
-  const copyLoadstringCode = (script: LuaScript) => {
+  const buildLoadstringCode = (script: LuaScript, hours: number, obfuscated: boolean) => {
     const url = getLoaderUrlForExecutor(script);
-    const code = wrapWithTrial(`loadstring(game:HttpGet("${url}"))()`);
-    navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: `Loadstring (${getSlot(script.id)}) disalin — ${trialLabel()}` });
-  };
-
-  const copyObfuscatedLoadstring = (script: LuaScript) => {
-    const url = getLoaderUrlForExecutor(script);
+    if (!obfuscated) return wrapWithTrial(`loadstring(game:HttpGet("${url}"))()`, hours);
     // Sembunyikan seluruh ekspresi (termasuk URL) sebagai XOR+hex, tetap jalan di executor.
     const key = 1 + Math.floor(Math.random() * 254);
     const inner = `return game:HttpGet("${url}")`;
     const hex = Array.from(new TextEncoder().encode(inner))
       .map((b) => ((b ^ key) & 0xff).toString(16).padStart(2, '0'))
       .join('');
-    const code = wrapWithTrial(
+    return wrapWithTrial(
       `loadstring(loadstring(("${hex}"):gsub('..',function(h)return string.char(bit32.bxor(tonumber(h,16),${key}))end))())()`,
+      hours,
     );
-    navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: `Loadstring ter-obfuscate disalin — ${trialLabel()}` });
+  };
+
+  /** Buka popup pemilihan masa berlaku sebelum menyalin loadstring. */
+  const openTrialDialog = (script: LuaScript, obfuscated: boolean) => {
+    setTrialTarget({ script, obfuscated });
+    setTrialDialogOpen(true);
+  };
+
+  const confirmCopyLoadstring = async () => {
+    if (!trialTarget) return;
+    const hours = trialUnlimited ? 0 : trialAmount * UNIT_HOURS[trialUnit];
+    if (!trialUnlimited && (!Number.isFinite(hours) || hours <= 0)) {
+      toast({ title: 'Durasi tidak valid', description: 'Isi angka durasi lebih dari 0', variant: 'destructive' });
+      return;
+    }
+    const code = buildLoadstringCode(trialTarget.script, hours, trialTarget.obfuscated);
+    await navigator.clipboard.writeText(code);
+    toast({
+      title: 'Copied!',
+      description: `Loadstring${trialTarget.obfuscated ? ' ter-obfuscate' : ''} disalin — ${trialLabel(hours)}`,
+    });
+    setTrialDialogOpen(false);
   };
 
 
@@ -1442,37 +1485,23 @@ ${GAME_TAB_END}`;
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Label className="text-xs text-muted-foreground">Loadstring Code:</Label>
-                    <select
-                      value={String(trialHours)}
-                      onChange={(e) => setTrialHours(Number(e.target.value))}
-                      className="text-xs bg-black/50 border border-border rounded px-2 py-1"
-                      title="Masa berlaku loadstring yang disalin"
-                    >
-                      <option value="0">Tanpa batas</option>
-                      <option value="1">Trial 1 jam</option>
-                      <option value="6">Trial 6 jam</option>
-                      <option value="24">Trial 1 hari</option>
-                      <option value="72">Trial 3 hari</option>
-                      <option value="168">Trial 7 hari</option>
-                      <option value="720">Trial 30 hari</option>
-                    </select>
                   </div>
                   <div className="flex flex-col gap-2">
                     <div className="p-2 rounded bg-black/50 overflow-x-auto">
                       <code className="text-xs font-mono text-secondary whitespace-nowrap block">
-                        {wrapWithTrial(`loadstring(game:HttpGet("${getLoaderUrlForExecutor(script)}"))()`)}
+                        {`loadstring(game:HttpGet("${getLoaderUrlForExecutor(script)}"))()`}
                       </code>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" onClick={() => copyLoadstringCode(script)} className="w-full text-xs">
+                      <Button variant="outline" size="sm" onClick={() => openTrialDialog(script, false)} className="w-full text-xs">
                         <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                         Copy Loadstring
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => copyObfuscatedLoadstring(script)}
+                        onClick={() => openTrialDialog(script, true)}
                         className="w-full text-xs border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
                         title="Salin loadstring dengan URL ter-obfuscate"
                       >
