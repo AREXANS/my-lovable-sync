@@ -110,9 +110,17 @@ const DurationCodeManager: FC = () => {
   const handleCreate = async () => {
     const code = newCode.trim() || generateCode();
     try {
+      const d = Math.max(0, newDays || 0);
+      const h = Math.max(0, newHours || 0);
+      const m = Math.max(0, newMinutes || 0);
+      if (d + h + m <= 0) {
+        toast({ title: 'Durasi kosong', description: 'Isi minimal salah satu: hari, jam, atau menit', variant: 'destructive' });
+        return;
+      }
+
       const { error } = await supabase.from('duration_codes').insert({
         code,
-        duration_days: newDuration,
+        duration_days: d,
         expires_at: new Date(newExpiry).toISOString(),
         max_uses_per_key: 1,
         is_active: true,
@@ -121,10 +129,24 @@ const DurationCodeManager: FC = () => {
       if (error) {
         toast({ title: 'Error', description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: 'Berhasil', description: `Kode ${code} berhasil dibuat` });
+        await saveMeta({ ...meta, [code]: { d, h, m } });
+
+        // Pengumuman otomatis ke script pengguna
+        const label = formatDuration(d, h, m);
+        const noticeText = `Kode bonus baru tersedia! Klaim "${code}" untuk tambahan durasi +${label}.`;
+        const payload = { text: noticeText, expires_at: new Date(newExpiry).toISOString() };
+        await supabase.from('app_settings').upsert(
+          { key: 'script_notice', value: JSON.stringify(payload), updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+        setNotice(payload);
+
+        toast({ title: 'Berhasil', description: `Kode ${code} (+${label}) dibuat & diumumkan di script` });
         setShowForm(false);
         setNewCode('');
-        setNewDuration(3);
+        setNewDays(3);
+        setNewHours(0);
+        setNewMinutes(0);
         setNewExpiry(toLocalDatetimeString(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)));
         fetchCodes();
       }
