@@ -631,10 +631,10 @@ const ScriptManagement: FC = () => {
     }
   };
 
-  /** Sakelar Obf: OFF langsung mengembalikan kode terbaca ke slot aktif,
-   *  ON meng-obfuscate salinan terbaca. Tidak pernah mengacak saat OFF. */
+  /** Sakelar Obf (default OFF): ON langsung meng-obfuscate kode mentah yang sudah ada
+   *  (tanpa upload ulang), OFF mengembalikan kode terbaca ke slot aktif. */
   const handleToggleObfuscate = async (script: LuaScript) => {
-    const next = script.obfuscate_enabled === false; // true = menyalakan
+    const next = script.obfuscate_enabled !== true; // true = menyalakan
     // Script Game Tab tidak boleh di-obfuscate — kode mentahnya dipakai manifest.
     if (next && isGameTabScript(script)) {
       toast({
@@ -645,23 +645,33 @@ const ScriptManagement: FC = () => {
     }
     const slot = getSlot(script.id);
     const stored = slot === 'backup' ? (script.backup_content || '') : (script.content || '');
+    const buffer = slot === 'backup' ? (backupEdited[script.id] || '') : (editedContent[script.id] || '');
     const storedPlain = (script.plain_content || '').trim()
       ? (script.plain_content as string)
-      : (script.obfuscate_enabled === false ? stored : '');
+      : (script.obfuscate_enabled !== true ? (stored || buffer) : '');
 
+    setSaving(script.id);
     try {
       const payload: any = { obfuscate_enabled: next, updated_at: new Date().toISOString() };
 
       if (next) {
-        const base = storedPlain || stored;
-        if (base.trim()) {
-          payload.plain_content = base;
-          const obf = await obfuscateSource(base);
-          if (slot === 'backup') payload.backup_content = obf;
-          else payload.content = obf;
+        // Ambil kode mentah yang ada sekarang — tidak perlu upload ulang.
+        const base = (storedPlain || stored || buffer).trim();
+        if (!base) {
+          toast({
+            title: 'Tidak ada kode',
+            description: `"${script.display_name}" masih kosong — isi kodenya dulu sebelum obfuscate.`,
+            variant: 'destructive',
+          });
+          return;
         }
+        payload.plain_content = base;
+        const obf = await obfuscateStrict(base);
+        if (slot === 'backup') payload.backup_content = obf;
+        else payload.content = obf;
       } else {
-        if (!storedPlain.trim()) {
+        const base = (storedPlain || '').trim();
+        if (!base) {
           toast({
             title: 'Tidak bisa dimatikan',
             description: `"${script.display_name}" belum menyimpan kode aslinya. Simpan sekali lagi kode terbaca, setelah itu sakelar Obf bisa dimatikan kapan saja.`,
@@ -669,8 +679,8 @@ const ScriptManagement: FC = () => {
           });
           return;
         }
-        if (slot === 'backup') payload.backup_content = storedPlain;
-        else payload.content = storedPlain;
+        if (slot === 'backup') payload.backup_content = base;
+        else payload.content = base;
       }
 
       const { error } = await supabase.from('lua_scripts').update(payload).eq('id', script.id);
@@ -684,11 +694,17 @@ const ScriptManagement: FC = () => {
 
       toast({
         title: next ? 'Obfuscate ON' : 'Obfuscate OFF',
-        description: `"${script.display_name}" ${next ? 'di-obfuscate sekarang juga' : 'langsung dikembalikan ke kode terbaca'}`,
+        description: `"${script.display_name}" ${next ? 'di-obfuscate luast level 3 sekarang juga' : 'langsung dikembalikan ke kode terbaca'}`,
       });
       fetchScripts();
-    } catch {
-      toast({ title: 'Error', description: 'Gagal mengubah status obfuscate', variant: 'destructive' });
+    } catch (e) {
+      toast({
+        title: 'Gagal obfuscate',
+        description: e instanceof Error ? e.message : 'Gagal mengubah status obfuscate',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(null);
     }
   };
 
