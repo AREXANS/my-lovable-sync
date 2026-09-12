@@ -900,40 +900,56 @@ ${GAME_TAB_END}`;
   };
 
   /** Bungkus loadstring dengan batas waktu trial (0 = tanpa batas). */
-  const wrapWithTrial = (inner: string) => {
-    const hours = Number(trialHours) || 0;
-    if (hours <= 0) return inner;
-    const expiresAt = Math.floor(Date.now() / 1000) + Math.floor(hours * 3600);
+  const wrapWithTrial = (inner: string, hours: number) => {
+    const h = Number(hours) || 0;
+    if (h <= 0) return inner;
+    const expiresAt = Math.floor(Date.now() / 1000) + Math.floor(h * 3600);
     return `local _exp=${expiresAt} local _now=(os and os.time and os.time()) or 0 if _now>0 and _now>_exp then return warn("Trial loadstring sudah expired") end ${inner}`;
   };
 
-  const trialLabel = () => {
-    const hours = Number(trialHours) || 0;
-    if (hours <= 0) return 'tanpa batas';
-    if (hours < 24) return `${hours} jam`;
-    return `${hours / 24} hari`;
+  const trialLabel = (hours: number) => {
+    const h = Number(hours) || 0;
+    if (h <= 0) return 'tanpa batas';
+    if (h < 1) return `${Math.round(h * 60)} menit`;
+    if (h < 24) return `${h} jam`;
+    return `${+(h / 24).toFixed(2)} hari`;
   };
 
-  const copyLoadstringCode = (script: LuaScript) => {
+  const buildLoadstringCode = (script: LuaScript, hours: number, obfuscated: boolean) => {
     const url = getLoaderUrlForExecutor(script);
-    const code = wrapWithTrial(`loadstring(game:HttpGet("${url}"))()`);
-    navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: `Loadstring (${getSlot(script.id)}) disalin — ${trialLabel()}` });
-  };
-
-  const copyObfuscatedLoadstring = (script: LuaScript) => {
-    const url = getLoaderUrlForExecutor(script);
+    if (!obfuscated) return wrapWithTrial(`loadstring(game:HttpGet("${url}"))()`, hours);
     // Sembunyikan seluruh ekspresi (termasuk URL) sebagai XOR+hex, tetap jalan di executor.
     const key = 1 + Math.floor(Math.random() * 254);
     const inner = `return game:HttpGet("${url}")`;
     const hex = Array.from(new TextEncoder().encode(inner))
       .map((b) => ((b ^ key) & 0xff).toString(16).padStart(2, '0'))
       .join('');
-    const code = wrapWithTrial(
+    return wrapWithTrial(
       `loadstring(loadstring(("${hex}"):gsub('..',function(h)return string.char(bit32.bxor(tonumber(h,16),${key}))end))())()`,
+      hours,
     );
-    navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: `Loadstring ter-obfuscate disalin — ${trialLabel()}` });
+  };
+
+  /** Buka popup pemilihan masa berlaku sebelum menyalin loadstring. */
+  const openTrialDialog = (script: LuaScript, obfuscated: boolean) => {
+    setTrialTarget({ script, obfuscated });
+    setTrialDialogOpen(true);
+  };
+
+  const confirmCopyLoadstring = async () => {
+    if (!trialTarget) return;
+    const hours = trialUnlimited ? 0 : trialAmount * UNIT_HOURS[trialUnit];
+    if (!trialUnlimited && (!Number.isFinite(hours) || hours <= 0)) {
+      toast({ title: 'Durasi tidak valid', description: 'Isi angka durasi lebih dari 0', variant: 'destructive' });
+      return;
+    }
+    const code = buildLoadstringCode(trialTarget.script, hours, trialTarget.obfuscated);
+    await navigator.clipboard.writeText(code);
+    toast({
+      title: 'Copied!',
+      description: `Loadstring${trialTarget.obfuscated ? ' ter-obfuscate' : ''} disalin — ${trialLabel(hours)}`,
+    });
+    setTrialDialogOpen(false);
   };
 
 
