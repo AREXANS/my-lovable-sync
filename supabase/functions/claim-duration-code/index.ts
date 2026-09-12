@@ -144,8 +144,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Berhasil! Durasi +${codeData.duration_days} hari ditambahkan`,
-        durationAdded: codeData.duration_days,
+        message: `Berhasil! Durasi +${durationLabel} ditambahkan`,
+        durationAdded: { days, hours, minutes },
         newExpiry: newExpiry.toISOString(),
         newExpiryDisplay: newExpiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
       }),
