@@ -160,8 +160,12 @@ const ScriptManagement: FC = () => {
   const [enableWhitelistWrap, setEnableWhitelistWrap] = useState<Record<string, boolean>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [selectedEndpoint, setSelectedEndpoint] = useState<'supabase' | 'current'>('supabase');
-  // 0 = tanpa batas, selain itu jumlah jam masa trial loadstring
-  const [trialHours, setTrialHours] = useState<number>(0);
+  // Popup pemilihan masa berlaku loadstring
+  const [trialDialogOpen, setTrialDialogOpen] = useState(false);
+  const [trialTarget, setTrialTarget] = useState<{ script: LuaScript; obfuscated: boolean } | null>(null);
+  const [trialUnlimited, setTrialUnlimited] = useState(true);
+  const [trialAmount, setTrialAmount] = useState<number>(1);
+  const [trialUnit, setTrialUnit] = useState<'minutes' | 'hours' | 'days'>('hours');
   const [recordings, setRecordings] = useState<LuaRecording[]>([]);
   const [recordingKey, setRecordingKey] = useState('');
   const [recordingsLoading, setRecordingsLoading] = useState(false);
