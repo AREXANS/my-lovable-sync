@@ -21,6 +21,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+// Konversi unit popup masa berlaku loadstring ke jam.
+const UNIT_HOURS: Record<'minutes' | 'hours' | 'days', number> = {
+  minutes: 1 / 60,
+  hours: 1,
+  days: 24,
+};
 
 interface LuaScript {
   id: string;
@@ -537,9 +552,14 @@ const ScriptManagement: FC = () => {
 
   // Obfuscate luast level 3 — versi ketat (melempar error bila gagal).
   const obfuscateStrict = async (raw: string): Promise<string> => {
-    const { data, error } = await supabase.functions.invoke('obfuscate-lua', {
+    const invoke = supabase.functions.invoke('obfuscate-lua', {
       body: { code: raw, preset: 'level3', outputStyle: 'singleline' },
     });
+    // Batas waktu 60 detik supaya sakelar Obf tidak pernah menggantung halaman.
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Layanan obfuscate tidak merespons (timeout 60 detik)')), 60000),
+    );
+    const { data, error } = (await Promise.race([invoke, timeout])) as Awaited<typeof invoke>;
     if (error) throw new Error(error.message || 'Obfuscator tidak merespons');
     const d = data as any;
     if (d?.error) throw new Error(String(d.error));
