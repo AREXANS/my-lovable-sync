@@ -255,7 +255,24 @@ serve(async (req) => {
       });
     }
 
-    return new Response(activeContent, {
+    // Pengumuman developer: disisipkan di awal script agar pengguna diberi tahu
+    let noticePrefix = "";
+    try {
+      const { data: noticeRow } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "script_notice")
+        .maybeSingle();
+      if (noticeRow?.value) {
+        const parsed = JSON.parse(noticeRow.value);
+        if (parsed?.text && (!parsed.expires_at || new Date(parsed.expires_at) > new Date())) {
+          const safe = String(parsed.text).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/[\r\n]+/g, " ");
+          noticePrefix = `-- [Arexans Info]\nprint("[Arexans] ${safe}")\n`;
+        }
+      }
+    } catch { /* abaikan jika pengumuman gagal dimuat */ }
+
+    return new Response(noticePrefix + activeContent, {
       status: 200,
       headers: { ...corsHeaders, ...noCacheHeaders, "Content-Type": "text/plain; charset=utf-8" },
     });

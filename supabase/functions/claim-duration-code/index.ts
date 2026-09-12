@@ -84,11 +84,47 @@ serve(async (req) => {
       );
     }
 
+    // Resolve duration: dukung hari + jam + menit.
+    // Detail jam/menit disimpan di app_settings "duration_code_meta" (tanpa ubah skema tabel).
+    let days = Number(codeData.duration_days) || 0;
+    let hours = 0;
+    let minutes = 0;
+    const { data: metaRow } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "duration_code_meta")
+      .maybeSingle();
+    if (metaRow?.value) {
+      try {
+        const meta = JSON.parse(metaRow.value);
+        const m = meta?.[codeData.code];
+        if (m) {
+          days = Number(m.d) || 0;
+          hours = Number(m.h) || 0;
+          minutes = Number(m.m) || 0;
+        }
+      } catch { /* abaikan meta rusak */ }
+    }
+
+    const totalMs = ((days * 24 + hours) * 60 + minutes) * 60 * 1000;
+    if (totalMs <= 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Durasi kode tidak valid" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days} hari`);
+    if (hours > 0) parts.push(`${hours} jam`);
+    if (minutes > 0) parts.push(`${minutes} menit`);
+    const durationLabel = parts.join(" ");
+
     // Extend the key's expiry
     const keyData = keys[keyIndex];
     const currentExpiry = new Date(keyData.expired);
     const baseDate = currentExpiry > now ? currentExpiry : now;
-    const newExpiry = new Date(baseDate.getTime() + codeData.duration_days * 24 * 60 * 60 * 1000);
+    const newExpiry = new Date(baseDate.getTime() + totalMs);
     
     keys[keyIndex] = { ...keyData, expired: newExpiry.toISOString() };
 
@@ -108,10 +144,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Berhasil! Durasi +${codeData.duration_days} hari ditambahkan`,
-        durationAdded: codeData.duration_days,
+        message: `Berhasil! Durasi +${durationLabel} ditambahkan`,
+        durationAdded: { days, hours, minutes },
         newExpiry: newExpiry.toISOString(),
-        newExpiryDisplay: newExpiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+        newExpiryDisplay: newExpiry.toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
