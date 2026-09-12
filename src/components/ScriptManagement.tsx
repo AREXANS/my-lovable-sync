@@ -531,16 +531,23 @@ const ScriptManagement: FC = () => {
     }
   };
 
-  // Auto-obfuscate via luast edge function. Falls back to source on failure so saving never blocks.
+  // Obfuscate luast level 3 — versi ketat (melempar error bila gagal).
+  const obfuscateStrict = async (raw: string): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke('obfuscate-lua', {
+      body: { code: raw, preset: 'level3', outputStyle: 'singleline' },
+    });
+    if (error) throw new Error(error.message || 'Obfuscator tidak merespons');
+    const d = data as any;
+    if (d?.error) throw new Error(String(d.error));
+    const result = d?.result ?? d?.code ?? d?.obfuscated;
+    if (typeof result === 'string' && result.trim()) return result;
+    throw new Error('Obfuscator tidak mengembalikan hasil');
+  };
+
+  // Auto-obfuscate. Falls back to source on failure so saving never blocks.
   const obfuscateSource = async (raw: string): Promise<string> => {
     try {
-      const { data, error } = await supabase.functions.invoke('obfuscate-lua', {
-        body: { code: raw, preset: 'level3', outputStyle: 'singleline' },
-      });
-      if (error) throw error;
-      const result = (data as any)?.result ?? (data as any)?.code ?? (data as any)?.obfuscated;
-      if (typeof result === 'string' && result.trim()) return result;
-      return raw;
+      return await obfuscateStrict(raw);
     } catch {
       return raw;
     }
