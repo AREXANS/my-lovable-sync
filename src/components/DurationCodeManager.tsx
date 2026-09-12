@@ -216,14 +216,15 @@ const DurationCodeManager: FC = () => {
                 />
               </div>
               <div>
-                <Label>Durasi Tambahan (hari)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={newDuration}
-                  onChange={(e) => setNewDuration(parseInt(e.target.value) || 1)}
-                  className="bg-background/50"
-                />
+                <Label>Durasi Tambahan</Label>
+                <div className="flex items-center gap-1.5">
+                  <Input type="number" min={0} value={newDays} onChange={(e) => setNewDays(parseInt(e.target.value) || 0)} className="bg-background/50 w-16 px-2" title="Hari" />
+                  <span className="text-xs text-muted-foreground">hari</span>
+                  <Input type="number" min={0} max={23} value={newHours} onChange={(e) => setNewHours(parseInt(e.target.value) || 0)} className="bg-background/50 w-16 px-2" title="Jam" />
+                  <span className="text-xs text-muted-foreground">jam</span>
+                  <Input type="number" min={0} max={59} value={newMinutes} onChange={(e) => setNewMinutes(parseInt(e.target.value) || 0)} className="bg-background/50 w-16 px-2" title="Menit" />
+                  <span className="text-xs text-muted-foreground">mnt</span>
+                </div>
               </div>
               <div>
                 <Label>Kode Expired Pada</Label>
