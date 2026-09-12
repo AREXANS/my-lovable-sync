@@ -43,7 +43,7 @@ interface LuaRecording {
   description: string | null;
   owner_username: string | null;
   game_id: string | null;
-  recording_data: unknown;
+  recording_data?: unknown;
   is_public: boolean;
   duration_seconds: number | null;
   created_at: string;
