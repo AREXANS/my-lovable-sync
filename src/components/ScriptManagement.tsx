@@ -1622,6 +1622,58 @@ ${GAME_TAB_END}`;
            </div>
         </CardContent>
       </Card>
+
+      {/* Popup pemilihan masa berlaku loadstring */}
+      <Dialog open={trialDialogOpen} onOpenChange={setTrialDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Masa Berlaku Loadstring</DialogTitle>
+            <DialogDescription>
+              Atur kapan loadstring{trialTarget?.obfuscated ? ' ter-obfuscate' : ''} untuk "
+              {trialTarget?.script.display_name}" berhenti jalan. Kosongkan batas agar berlaku selamanya.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <p className="text-sm font-medium">Tanpa batas waktu</p>
+                <p className="text-xs text-muted-foreground">Loadstring tidak pernah expired</p>
+              </div>
+              <Switch checked={trialUnlimited} onCheckedChange={setTrialUnlimited} />
+            </div>
+            {!trialUnlimited && (
+              <div className="flex items-end gap-2">
+                <div className="flex-1 space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Durasi (bebas)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={trialAmount}
+                    onChange={(e) => setTrialAmount(Math.max(1, Number(e.target.value) || 1))}
+                  />
+                </div>
+                <div className="w-36 space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Satuan</Label>
+                  <Select value={trialUnit} onValueChange={(v) => setTrialUnit(v as 'minutes' | 'hours' | 'days')}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutes">Menit</SelectItem>
+                      <SelectItem value="hours">Jam</SelectItem>
+                      <SelectItem value="days">Hari</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setTrialDialogOpen(false)}>Batal</Button>
+            <Button onClick={confirmCopyLoadstring} className="bg-cyan-600 hover:bg-cyan-500">
+              <Copy className="w-4 h-4 mr-1" /> Salin Loadstring
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
