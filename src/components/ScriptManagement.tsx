@@ -160,6 +160,8 @@ const ScriptManagement: FC = () => {
   const [enableWhitelistWrap, setEnableWhitelistWrap] = useState<Record<string, boolean>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [selectedEndpoint, setSelectedEndpoint] = useState<'supabase' | 'current'>('supabase');
+  // 0 = tanpa batas, selain itu jumlah jam masa trial loadstring
+  const [trialHours, setTrialHours] = useState<number>(0);
   const [recordings, setRecordings] = useState<LuaRecording[]>([]);
   const [recordingKey, setRecordingKey] = useState('');
   const [recordingsLoading, setRecordingsLoading] = useState(false);
@@ -874,11 +876,26 @@ ${GAME_TAB_END}`;
     return `${SUPABASE_API_BASE}/get-loader?name=${encodeURIComponent(script.name)}${slotSuffix(script.id)}`;
   };
 
+  /** Bungkus loadstring dengan batas waktu trial (0 = tanpa batas). */
+  const wrapWithTrial = (inner: string) => {
+    const hours = Number(trialHours) || 0;
+    if (hours <= 0) return inner;
+    const expiresAt = Math.floor(Date.now() / 1000) + Math.floor(hours * 3600);
+    return `local _exp=${expiresAt} local _now=(os and os.time and os.time()) or 0 if _now>0 and _now>_exp then return warn("Trial loadstring sudah expired") end ${inner}`;
+  };
+
+  const trialLabel = () => {
+    const hours = Number(trialHours) || 0;
+    if (hours <= 0) return 'tanpa batas';
+    if (hours < 24) return `${hours} jam`;
+    return `${hours / 24} hari`;
+  };
+
   const copyLoadstringCode = (script: LuaScript) => {
     const url = getLoaderUrlForExecutor(script);
-    const code = `loadstring(game:HttpGet("${url}"))()`;
+    const code = wrapWithTrial(`loadstring(game:HttpGet("${url}"))()`);
     navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: `Loadstring (${getSlot(script.id)}) disalin` });
+    toast({ title: 'Copied!', description: `Loadstring (${getSlot(script.id)}) disalin — ${trialLabel()}` });
   };
 
   const copyObfuscatedLoadstring = (script: LuaScript) => {
@@ -889,10 +906,13 @@ ${GAME_TAB_END}`;
     const hex = Array.from(new TextEncoder().encode(inner))
       .map((b) => ((b ^ key) & 0xff).toString(16).padStart(2, '0'))
       .join('');
-    const code = `loadstring(loadstring(("${hex}"):gsub('..',function(h)return string.char(bit32.bxor(tonumber(h,16),${key}))end))())()`;
+    const code = wrapWithTrial(
+      `loadstring(loadstring(("${hex}"):gsub('..',function(h)return string.char(bit32.bxor(tonumber(h,16),${key}))end))())()`,
+    );
     navigator.clipboard.writeText(code);
-    toast({ title: 'Copied!', description: 'Loadstring ter-obfuscate disalin' });
+    toast({ title: 'Copied!', description: `Loadstring ter-obfuscate disalin — ${trialLabel()}` });
   };
+
 
   const getScriptTypeColor = (name: string) => {
     switch (name) {
@@ -1420,13 +1440,30 @@ ${GAME_TAB_END}`;
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Loadstring Code:</Label>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label className="text-xs text-muted-foreground">Loadstring Code:</Label>
+                    <select
+                      value={String(trialHours)}
+                      onChange={(e) => setTrialHours(Number(e.target.value))}
+                      className="text-xs bg-black/50 border border-border rounded px-2 py-1"
+                      title="Masa berlaku loadstring yang disalin"
+                    >
+                      <option value="0">Tanpa batas</option>
+                      <option value="1">Trial 1 jam</option>
+                      <option value="6">Trial 6 jam</option>
+                      <option value="24">Trial 1 hari</option>
+                      <option value="72">Trial 3 hari</option>
+                      <option value="168">Trial 7 hari</option>
+                      <option value="720">Trial 30 hari</option>
+                    </select>
+                  </div>
                   <div className="flex flex-col gap-2">
                     <div className="p-2 rounded bg-black/50 overflow-x-auto">
                       <code className="text-xs font-mono text-secondary whitespace-nowrap block">
-                        {`loadstring(game:HttpGet("${getLoaderUrlForExecutor(script)}"))()`}
+                        {wrapWithTrial(`loadstring(game:HttpGet("${getLoaderUrlForExecutor(script)}"))()`)}
                       </code>
                     </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Button variant="outline" size="sm" onClick={() => copyLoadstringCode(script)} className="w-full text-xs">
                         <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
