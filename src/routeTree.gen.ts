@@ -15,6 +15,7 @@ import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as KeySystemRouteImport } from './routes/key-system'
 import { Route as XcoinsRouteImport } from './routes/xcoins'
+import { Route as ApiGetLoaderRouteImport } from './routes/api/get-loader'
 import { Route as ApiGetScriptRouteImport } from './routes/api/get-script'
 import { Route as LoaderIndexRouteImport } from './routes/loader/index'
 
@@ -48,6 +49,11 @@ const XcoinsRoute = XcoinsRouteImport.update({
   path: '/xcoins',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGetLoaderRoute = ApiGetLoaderRouteImport.update({
+  id: '/api/get-loader',
+  path: '/api/get-loader',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGetScriptRoute = ApiGetScriptRouteImport.update({
   id: '/api/get-script',
   path: '/api/get-script',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/key-system': typeof KeySystemRoute
   '/xcoins': typeof XcoinsRoute
+  '/api/get-loader': typeof ApiGetLoaderRoute
   '/api/get-script': typeof ApiGetScriptRoute
   '/loader/': typeof LoaderIndexRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/key-system': typeof KeySystemRoute
   '/xcoins': typeof XcoinsRoute
+  '/api/get-loader': typeof ApiGetLoaderRoute
   '/api/get-script': typeof ApiGetScriptRoute
   '/loader': typeof LoaderIndexRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/key-system': typeof KeySystemRoute
   '/xcoins': typeof XcoinsRoute
+  '/api/get-loader': typeof ApiGetLoaderRoute
   '/api/get-script': typeof ApiGetScriptRoute
   '/loader/': typeof LoaderIndexRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/key-system'
     | '/xcoins'
+    | '/api/get-loader'
     | '/api/get-script'
     | '/loader/'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/key-system'
     | '/xcoins'
+    | '/api/get-loader'
     | '/api/get-script'
     | '/loader'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/key-system'
     | '/xcoins'
+    | '/api/get-loader'
     | '/api/get-script'
     | '/loader/'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   KeySystemRoute: typeof KeySystemRoute
   XcoinsRoute: typeof XcoinsRoute
+  ApiGetLoaderRoute: typeof ApiGetLoaderRoute
   ApiGetScriptRoute: typeof ApiGetScriptRoute
   LoaderIndexRoute: typeof LoaderIndexRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof XcoinsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/get-loader': {
+      id: '/api/get-loader'
+      path: '/api/get-loader'
+      fullPath: '/api/get-loader'
+      preLoaderRoute: typeof ApiGetLoaderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/get-script': {
       id: '/api/get-script'
       path: '/api/get-script'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   KeySystemRoute: KeySystemRoute,
   XcoinsRoute: XcoinsRoute,
+  ApiGetLoaderRoute: ApiGetLoaderRoute,
   ApiGetScriptRoute: ApiGetScriptRoute,
   LoaderIndexRoute: LoaderIndexRoute,
 }
