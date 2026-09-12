@@ -1634,14 +1634,48 @@ ${GAME_TAB_END}`;
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="flex items-center justify-between rounded-md border p-3">
-              <div>
-                <p className="text-sm font-medium">Tanpa batas waktu</p>
-                <p className="text-xs text-muted-foreground">Loadstring tidak pernah expired</p>
-              </div>
-              <Switch checked={trialUnlimited} onCheckedChange={setTrialUnlimited} />
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={trialUnlimited ? 'default' : 'outline'}
+                onClick={() => setTrialUnlimited(true)}
+              >
+                Tanpa batas
+              </Button>
+              <Button
+                type="button"
+                variant={!trialUnlimited ? 'default' : 'outline'}
+                onClick={() => setTrialUnlimited(false)}
+              >
+                Pakai batas waktu
+              </Button>
             </div>
-            {!trialUnlimited && (
+
+            <div className={trialUnlimited ? 'pointer-events-none space-y-3 opacity-40' : 'space-y-3'}>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { label: '1 Jam', amount: 1, unit: 'hours' as const },
+                  { label: '6 Jam', amount: 6, unit: 'hours' as const },
+                  { label: '1 Hari', amount: 1, unit: 'days' as const },
+                  { label: '3 Hari', amount: 3, unit: 'days' as const },
+                  { label: '7 Hari', amount: 7, unit: 'days' as const },
+                  { label: '30 Hari', amount: 30, unit: 'days' as const },
+                ]).map((p) => (
+                  <Button
+                    key={p.label}
+                    type="button"
+                    size="sm"
+                    variant={!trialUnlimited && trialAmount === p.amount && trialUnit === p.unit ? 'default' : 'outline'}
+                    onClick={() => {
+                      setTrialUnlimited(false);
+                      setTrialAmount(p.amount);
+                      setTrialUnit(p.unit);
+                    }}
+                  >
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
               <div className="flex items-end gap-2">
                 <div className="flex-1 space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Durasi (bebas)</Label>
@@ -1649,12 +1683,21 @@ ${GAME_TAB_END}`;
                     type="number"
                     min={1}
                     value={trialAmount}
-                    onChange={(e) => setTrialAmount(Math.max(1, Number(e.target.value) || 1))}
+                    onChange={(e) => {
+                      setTrialUnlimited(false);
+                      setTrialAmount(Math.max(1, Number(e.target.value) || 1));
+                    }}
                   />
                 </div>
                 <div className="w-36 space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Satuan</Label>
-                  <Select value={trialUnit} onValueChange={(v) => setTrialUnit(v as 'minutes' | 'hours' | 'days')}>
+                  <Select
+                    value={trialUnit}
+                    onValueChange={(v) => {
+                      setTrialUnlimited(false);
+                      setTrialUnit(v as 'minutes' | 'hours' | 'days');
+                    }}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="minutes">Menit</SelectItem>
@@ -1664,7 +1707,7 @@ ${GAME_TAB_END}`;
                   </Select>
                 </div>
               </div>
-            )}
+            </div>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setTrialDialogOpen(false)}>Batal</Button>
