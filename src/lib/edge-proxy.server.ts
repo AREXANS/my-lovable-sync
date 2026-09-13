@@ -1,7 +1,7 @@
 /** Teruskan request ke Supabase Edge Function agar bisa dipanggil lewat domain sendiri
  *  (mis. https://tools.arexans.my.id/api/get-script?name=keysystem). */
 const SUPABASE_URL =
-  process.env['VITE_SUPABASE_URL'] || 'https://pahxndxofczkcszqhulz.supabase.co';
+  process.env['SUPABASE_URL'] || process.env['VITE_SUPABASE_URL'] || '';
 
 const FORWARD_HEADERS = [
   'user-agent',
