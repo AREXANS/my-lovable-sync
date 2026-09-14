@@ -24,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { key, hwid, robloxUsername, scriptName } = await req.json();
+    const { key, hwid, robloxUsername } = await req.json();
 
     if (!key) {
       return new Response(
@@ -36,81 +36,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // ===== Per-script key system =====
-    // Kalau script memakai key khusus (key_system_mode = 'script'), key global diabaikan.
-    if (scriptName) {
-      const { data: scriptRow } = await supabase
-        .from("lua_scripts")
-        .select("id, key_system_mode, display_name")
-        .eq("name", scriptName)
-        .maybeSingle();
-
-      if (scriptRow && (scriptRow as any).key_system_mode === "script") {
-        const { data: keyRow } = await supabase
-          .from("lua_script_keys")
-          .select("*")
-          .eq("script_id", (scriptRow as any).id)
-          .eq("key", key)
-          .maybeSingle();
-
-        const nowTs = new Date();
-
-        if (!keyRow || (keyRow as any).is_active === false) {
-          return new Response(
-            JSON.stringify({ success: false, valid: false, error: "Key tidak valid untuk script ini", scoped: true }),
-            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        const exp = (keyRow as any).expires_at ? new Date((keyRow as any).expires_at) : null;
-        if (exp && exp < nowTs) {
-          return new Response(
-            JSON.stringify({ success: false, valid: false, expired: true, error: "Key script sudah kedaluwarsa", scoped: true }),
-            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        let hwids: string[] = Array.isArray((keyRow as any).hwids) ? (keyRow as any).hwids : [];
-        const maxHwid = (keyRow as any).max_hwid || 1;
-        let hwidStatusScoped = "not_checked";
-        if (hwid) {
-          if (hwids.includes(hwid)) {
-            hwidStatusScoped = "registered";
-          } else if (hwids.length >= maxHwid) {
-            return new Response(
-              JSON.stringify({ success: false, valid: false, error: `Maximum devices reached (${maxHwid})`, hwid_limit_reached: true, scoped: true }),
-              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-            );
-          } else {
-            hwids = [...hwids, hwid];
-            hwidStatusScoped = "newly_registered";
-            await supabase
-              .from("lua_script_keys")
-              .update({ hwids, updated_at: nowTs.toISOString() })
-              .eq("id", (keyRow as any).id);
-          }
-        }
-
-        const diff = exp ? exp.getTime() - nowTs.getTime() : 0;
-        return new Response(
-          JSON.stringify({
-            success: true, valid: true, scoped: true,
-            message: "Key script valid",
-            key, role: (keyRow as any).role || "SCRIPT",
-            script: scriptName,
-            expired: exp ? exp.toISOString() : null,
-            unlimited: !exp,
-            timeRemainingMs: exp ? diff : null,
-            hwid_status: hwidStatusScoped,
-            hwidCount: hwids.length, maxHwid,
-            frozen: false, robloxUsername: robloxUsername || null,
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
 
     const { data: settingData, error: settingError } = await supabase
       .from("app_settings")

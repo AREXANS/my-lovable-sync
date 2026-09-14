@@ -310,56 +310,6 @@ export type Database = {
         }
         Relationships: []
       }
-      lua_script_keys: {
-        Row: {
-          created_at: string
-          expires_at: string | null
-          hwids: Json
-          id: string
-          is_active: boolean
-          key: string
-          max_hwid: number
-          note: string | null
-          role: string
-          script_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string | null
-          hwids?: Json
-          id?: string
-          is_active?: boolean
-          key: string
-          max_hwid?: number
-          note?: string | null
-          role?: string
-          script_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string | null
-          hwids?: Json
-          id?: string
-          is_active?: boolean
-          key?: string
-          max_hwid?: number
-          note?: string | null
-          role?: string
-          script_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lua_script_keys_script_id_fkey"
-            columns: ["script_id"]
-            isOneToOne: false
-            referencedRelation: "lua_scripts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lua_script_versions: {
         Row: {
           content: string
@@ -406,7 +356,6 @@ export type Database = {
           display_name: string
           id: string
           is_active: boolean
-          key_system_mode: string
           name: string
           obfuscate_enabled: boolean
           pinned: boolean
@@ -425,7 +374,6 @@ export type Database = {
           display_name: string
           id?: string
           is_active?: boolean
-          key_system_mode?: string
           name: string
           obfuscate_enabled?: boolean
           pinned?: boolean
@@ -444,7 +392,6 @@ export type Database = {
           display_name?: string
           id?: string
           is_active?: boolean
-          key_system_mode?: string
           name?: string
           obfuscate_enabled?: boolean
           pinned?: boolean

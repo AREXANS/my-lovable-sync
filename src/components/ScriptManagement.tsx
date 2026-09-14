@@ -550,13 +550,37 @@ const ScriptManagement: FC = () => {
     }
   };
 
-  // Obfuscate otomatis DIHAPUS — semua script disimpan mentah/terbaca apa adanya.
+  // Obfuscate luast level 3 — versi ketat (melempar error bila gagal).
+  const obfuscateStrict = async (raw: string): Promise<string> => {
+    const invoke = supabase.functions.invoke('obfuscate-lua', {
+      body: { code: raw, preset: 'level3', outputStyle: 'singleline' },
+    });
+    // Batas waktu 60 detik supaya sakelar Obf tidak pernah menggantung halaman.
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Layanan obfuscate tidak merespons (timeout 60 detik)')), 60000),
+    );
+    const { data, error } = (await Promise.race([invoke, timeout])) as Awaited<typeof invoke>;
+    if (error) throw new Error(error.message || 'Obfuscator tidak merespons');
+    const d = data as any;
+    if (d?.error) throw new Error(String(d.error));
+    const result = d?.result ?? d?.code ?? d?.obfuscated;
+    if (typeof result === 'string' && result.trim()) return result;
+    throw new Error('Obfuscator tidak mengembalikan hasil');
+  };
 
-  // Kategori Game Tab (Crack/Random/Game).
+  // Auto-obfuscate. Falls back to source on failure so saving never blocks.
+  const obfuscateSource = async (raw: string): Promise<string> => {
+    try {
+      return await obfuscateStrict(raw);
+    } catch {
+      return raw;
+    }
+  };
+
+  // Kategori Game Tab (Crack/Random/Game) SELALU disimpan mentah — tidak pernah di-obfuscate luast.
   const GAME_TAB_CATS = ['crack', 'random', 'game'];
   const isGameTabScript = (script: LuaScript) =>
     GAME_TAB_CATS.includes(String((script as any).category || '').toLowerCase().trim());
-
 
   const handleSaveScript = async (script: LuaScript) => {
     setSaving(script.id);
@@ -1193,11 +1217,15 @@ ${GAME_TAB_END}`;
                       {script.is_active ? 'Active' : 'Inactive'}
                     </span>
                     <span className="mx-1 h-4 w-px bg-border" />
-                    <span className="text-xs sm:text-sm flex items-center gap-1 text-muted-foreground">
+                    <Switch
+                      checked={script.obfuscate_enabled === true}
+                      disabled={saving === script.id}
+                      onCheckedChange={() => handleToggleObfuscate(script)}
+                    />
+                    <span className={`text-xs sm:text-sm flex items-center gap-1 ${script.obfuscate_enabled === true ? 'text-cyan-400' : 'text-muted-foreground'}`}>
                       <Shield className="w-3 h-3" />
-                      Kode mentah
+                      Obf {script.obfuscate_enabled === true ? 'ON' : 'OFF'}
                     </span>
-
                   </div>
                   {hasChanges(script) && (
                     <span className="flex items-center gap-1 text-xs text-yellow-500">
