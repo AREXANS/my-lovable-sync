@@ -1217,15 +1217,11 @@ ${GAME_TAB_END}`;
                       {script.is_active ? 'Active' : 'Inactive'}
                     </span>
                     <span className="mx-1 h-4 w-px bg-border" />
-                    <Switch
-                      checked={script.obfuscate_enabled === true}
-                      disabled={saving === script.id}
-                      onCheckedChange={() => handleToggleObfuscate(script)}
-                    />
-                    <span className={`text-xs sm:text-sm flex items-center gap-1 ${script.obfuscate_enabled === true ? 'text-cyan-400' : 'text-muted-foreground'}`}>
+                    <span className="text-xs sm:text-sm flex items-center gap-1 text-muted-foreground">
                       <Shield className="w-3 h-3" />
-                      Obf {script.obfuscate_enabled === true ? 'ON' : 'OFF'}
+                      Kode mentah
                     </span>
+
                   </div>
                   {hasChanges(script) && (
                     <span className="flex items-center gap-1 text-xs text-yellow-500">
